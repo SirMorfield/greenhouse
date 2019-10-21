@@ -1,0 +1,5 @@
+arduino-mk
+sudo apt install arduino-mk -y
+
+avrdude
+sudo apt install avrdude -y

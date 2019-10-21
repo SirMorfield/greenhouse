@@ -1,27 +1,18 @@
-# import RPi.GPIO as GPIO
-# import time
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setwarnings(False)
-# GPIO.setup(18,GPIO.OUT)
-# GPIO.output(18,GPIO.HIGH)
-# time.sleep(1)
-# GPIO.output(18,GPIO.LOW)
+from time import sleep
+from smbus2 import SMBusWrapper
+address = 0x08
 
-import RPi.GPIO as IO
-import time
-
-IO.setwarnings(False)
-
-IO.setmode (IO.BCM)
-IO.setup(18, IO.OUT)
-p = IO.PWM(18, 100)
-p.start(0)
+# Give the I2C device time to settle
+sleep(2)
 
 while 1:
-  for x in range (100):
-    p.ChangeDutyCycle(x)
-    time.sleep(0.02)
+    try:
+        with SMBusWrapper(1) as bus:
+            data = bus.read_i2c_block_data(address, 99, 2)
+            print('Offset {}, data {}'.format(data[0], data[1]))
 
-  for x in range (100):
-    p.ChangeDutyCycle(100-x)
-    time.sleep(0.02)
+    except:
+        print(' Oops! Error')
+
+    # Decreasing delay may create more transmission errors.
+    sleep(0.0005)
