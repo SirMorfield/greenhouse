@@ -23,7 +23,17 @@ int fanOutPWM = 100; // 6
 char ledStripPWM = 255; // 7
 
 #define variables 8
-int buffer[variables];
+byte buffer[variables];
+
+bool validateBuffer()
+{
+	byte controle = 0;
+	for (int i = 0; i < sizeof(buffer) - 1; i++)
+	{
+		controle += buffer[i];
+	}
+	return (buffer[sizeof(buffer) - 1] == controle);
+}
 
 void receiveData()
 {
@@ -34,23 +44,22 @@ void receiveData()
 		counter++;
 	}
 
-	Serial.println("buffer");
-	for (int i = 0; i < sizeof(buffer); i++)
+	if (sizeof(buffer) == variables + 1)
 	{
-		Serial.println(buffer[i]);
-	}
-
-	Serial.print("condition ");
-	Serial.println(sizeof(buffer) == variables);
-	if (sizeof(buffer) == variables)
-	{
-
-		updateInterval = buffer[1];
-		targetTemp = buffer[2];
-		targetHum = buffer[4];
-		fanInPWM = buffer[5];
-		fanOutPWM = buffer[6];
-		ledStripPWM = buffer[7];
+		if (validateBuffer())
+		{
+			updateInterval = buffer[1];
+			targetTemp = buffer[2];
+			targetHum = buffer[4];
+			fanInPWM = buffer[5];
+			fanOutPWM = buffer[6];
+			ledStripPWM = buffer[7];
+			digitalWrite(13, LOW);
+		}
+		else
+		{
+			digitalWrite(13, HIGH);
+		}
 	}
 	respond();
 }
@@ -92,13 +101,14 @@ void setup()
 	Wire.begin(slaveAddress);
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
-	Serial.begin(115200);
+	// Serial.begin(115200);
 
 	pinMode(heaterPin, OUTPUT);
 	pinMode(dehumidifierPin, OUTPUT);
 	pinMode(fanInPin, OUTPUT);
 	pinMode(fanOutPin, OUTPUT);
 	pinMode(ledStripPin, OUTPUT);
+	pinMode(13, OUTPUT);
 }
 
 void loop()
