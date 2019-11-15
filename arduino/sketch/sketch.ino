@@ -1,30 +1,48 @@
 #include <DHT.h>
 #include <Wire.h>
 
-#define slaveAddress 0x08
-
 DHT dht(2, DHT22);
 
-int updateInterval = 60; // 0
-
-float temp = 0.00;   // 1
-int targetTemp = 32; // 2
-#define heaterPin 4
-
-float hum = 0.00;   // 3
-int targetHum = 60; // 4
-#define dehumidifierPin 7
-
+#define slaveAddress 0x08
+#define heaterPin 8
+#define dehumidifierPin 12
+#define lampPin 7
 #define fanInPin 3
-int fanInPWM = 100; // 5
 #define fanOutPin 5
-int fanOutPWM = 100; // 6
 #define ledStripPin 6
-char ledStripPWM = 255; // 7
 
-#define variables 8
-int buffer[variables];
+#define numConsts 7
+int consts[numConsts] = {
+	32,  // 0 targetTemp
+	60,  // 1 targetHum
+	62,  // 2 updateInterval // 1.9 min
+	255, // 3 fanInPWM
+	255, // 4 fanOutPWM
+	255, // 5 ledPWM
+	1	// 6 updateIntervalMultiplier
+};
 
+#define numVars 8
+int vars[numVars] = {
+	0, // 0 temp
+	0, // 1 hum
+	0, // 2 fanInOn
+	0, // 3 fanOutOn
+	0, // 4 ledOn
+	0, // 5 dehumidifierOn
+	0, // 6 lampOn
+	0  // 7 heaterOn
+};
+long interval = 120000; // 2 min
+#define intervalFactor 1.09
+
+void updateSensor()
+{
+	vars[0] = dht.readTemperature();
+	vars[1] = dht.readHumidity();
+}
+
+int buffer[numVars + numConsts];
 void receiveData()
 {
 	int counter = 0;
@@ -34,23 +52,12 @@ void receiveData()
 		counter++;
 	}
 
-	Serial.println("buffer");
-	for (int i = 0; i < sizeof(buffer); i++)
+	if (sizeof(buffer) == numConsts)
 	{
-		Serial.println(buffer[i]);
-	}
-
-	Serial.print("condition ");
-	Serial.println(sizeof(buffer) == variables);
-	if (sizeof(buffer) == variables)
-	{
-
-		updateInterval = buffer[1];
-		targetTemp = buffer[2];
-		targetHum = buffer[4];
-		fanInPWM = buffer[5];
-		fanOutPWM = buffer[6];
-		ledStripPWM = buffer[7];
+		for (int i = 0; i < numConsts; i++)
+		{
+			consts[i] = buffer[i];
+		}
 	}
 	respond();
 }
@@ -58,32 +65,32 @@ void receiveData()
 int varPos = 0;
 void sendData()
 {
-	int nums[variables] = {};
-
-	nums[0] = updateInterval;
-	nums[1] = map(temp, 0, 100, 0, 255);
-	nums[2] = targetTemp;
-	nums[3] = map(hum, 0, 100, 0, 255);
-	nums[4] = targetHum;
-	nums[5] = fanInPWM;
-	nums[6] = fanOutPWM;
-	nums[7] = ledStripPWM;
-
-	Wire.write(nums[varPos]);
-	varPos++;
-	if (varPos == 8)
+	if (varPos < numConsts)
+		Wire.write(consts[varPos]);
+	else
 	{
-		varPos = 0;
+		updateSensor();
+		Wire.write(vars[varPos - numConsts]);
 	}
+
+	varPos++;
+	if (varPos == numConsts + numVars)
+		varPos = 0;
 }
 
 void respond()
 {
-	digitalWrite(heaterPin, temp < targetTemp);
-	digitalWrite(dehumidifierPin, hum > targetHum);
-	analogWrite(fanInPin, fanInPWM);
-	analogWrite(fanOutPin, fanOutPWM);
-	analogWrite(ledStripPin, ledStripPWM);
+	updateSensor();
+
+	digitalWrite(heaterPin, vars[0] < consts[0]);
+	digitalWrite(dehumidifierPin, vars[1] > consts[1]);
+	digitalWrite(lampPin, vars[6]);
+
+	analogWrite(fanInPin, consts[3]);
+	analogWrite(fanOutPin, consts[4]);
+	analogWrite(ledStripPin, consts[5]);
+
+	interval = pow(intervalFactor, consts[2]);
 }
 
 void setup()
@@ -92,23 +99,26 @@ void setup()
 	Wire.begin(slaveAddress);
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
-	Serial.begin(115200);
+	// Serial.begin(115200);
 
 	pinMode(heaterPin, OUTPUT);
 	pinMode(dehumidifierPin, OUTPUT);
+	pinMode(lampPin, OUTPUT);
 	pinMode(fanInPin, OUTPUT);
 	pinMode(fanOutPin, OUTPUT);
 	pinMode(ledStripPin, OUTPUT);
+
+	interval = pow(intervalFactor, consts[2]);
+	updateSensor();
+	respond();
 }
 
 void loop()
 {
-	if (millis() % updateInterval * 1000 == 0)
+	if (millis() % interval == 0)
 	{
-		hum = dht.readHumidity();
-		temp = dht.readTemperature();
+		updateSensor();
 		respond();
 	}
-
 	delay(1);
 }
