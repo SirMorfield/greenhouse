@@ -1,7 +1,7 @@
 {
     "board": "arduino:avr:nano",
-    "port": "/dev/ttyACM0",
+    "port": "/dev/ttyUSB0",
     "sketch": "arduino/sketch/sketch.ino",
     "programmer": "Arduino as ISP",
-    "configuration": "cpu=atmega328"
+    "configuration": "cpu=atmega328old"
 }

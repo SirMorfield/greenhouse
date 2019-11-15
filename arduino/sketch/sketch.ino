@@ -11,19 +11,24 @@ DHT dht(2, DHT22);
 #define fanOutPin 5
 #define ledStripPin 6
 
-#define numConsts 7
-int consts[numConsts] = {
+#define numConsts 6
+byte consts[numConsts] = {
 	32,  // 0 targetTemp
-	60,  // 1 targetHum
-	62,  // 2 updateInterval // 1.9 min
+	1,   // 1 targetHum
+	1,   // 2 updateInterval // 14 * 5000 = 1.16... min
 	255, // 3 fanInPWM
 	255, // 4 fanOutPWM
-	255, // 5 ledPWM
-	1	// 6 updateIntervalMultiplier
+	255, // 5 ledStripPWM
 };
+#define targetTemp consts[0]
+#define targetHum consts[1]
+#define updateInterval consts[2]
+#define fanInPWM consts[3]
+#define fanOutPWM consts[4]
+#define ledStripPWM consts[5]
 
 #define numVars 8
-int vars[numVars] = {
+byte vars[numVars] = {
 	0, // 0 temp
 	0, // 1 hum
 	0, // 2 fanInOn
@@ -33,16 +38,33 @@ int vars[numVars] = {
 	0, // 6 lampOn
 	0  // 7 heaterOn
 };
-long interval = 120000; // 2 min
-#define intervalFactor 1.09
+
+#define temp vars[0]
+#define hum vars[1]
+#define fanInOn vars[2]
+#define fanOutOn vars[3]
+#define ledOn vars[4]
+#define dehumidifierOn vars[5]
+#define lampOn vars[6]
+#define heaterOn vars[7]
 
 void updateSensor()
 {
-	vars[0] = dht.readTemperature();
-	vars[1] = dht.readHumidity();
+	temp = dht.readTemperature();
+	hum = dht.readHumidity();
 }
 
-int buffer[numVars + numConsts];
+byte buffer[numConsts + numVars + 1];
+bool validateBuffer()
+{
+	byte controle = 0;
+	for (int i = 0; i < sizeof(buffer) - 1; i++)
+	{
+		controle += buffer[i];
+	}
+	return (buffer[sizeof(buffer) - 1] == controle);
+}
+
 void receiveData()
 {
 	int counter = 0;
@@ -52,11 +74,19 @@ void receiveData()
 		counter++;
 	}
 
-	if (sizeof(buffer) == numConsts)
+	if (sizeof(buffer) == numConsts + 1)
 	{
-		for (int i = 0; i < numConsts; i++)
+		if (validateBuffer())
 		{
-			consts[i] = buffer[i];
+			for (int i = 0; i < numConsts; i++)
+			{
+				consts[i] = buffer[i];
+			}
+			digitalWrite(13, LOW);
+		}
+		else
+		{
+			digitalWrite(13, HIGH);
 		}
 	}
 	respond();
@@ -66,11 +96,15 @@ int varPos = 0;
 void sendData()
 {
 	if (varPos < numConsts)
+	{
 		Wire.write(consts[varPos]);
+		Serial.println(consts[varPos]);
+	}
 	else
 	{
 		updateSensor();
 		Wire.write(vars[varPos - numConsts]);
+		Serial.println(vars[varPos - numConsts]);
 	}
 
 	varPos++;
@@ -81,16 +115,15 @@ void sendData()
 void respond()
 {
 	updateSensor();
+	heaterOn = temp < targetTemp;
+	digitalWrite(heaterPin, heaterOn);
+	dehumidifierOn = hum > targetHum;
+	digitalWrite(dehumidifierPin, dehumidifierOn);
+	digitalWrite(lampPin, lampOn);
 
-	digitalWrite(heaterPin, vars[0] < consts[0]);
-	digitalWrite(dehumidifierPin, vars[1] > consts[1]);
-	digitalWrite(lampPin, vars[6]);
-
-	analogWrite(fanInPin, consts[3]);
-	analogWrite(fanOutPin, consts[4]);
-	analogWrite(ledStripPin, consts[5]);
-
-	interval = pow(intervalFactor, consts[2]);
+	analogWrite(fanInPin, fanInPWM);
+	analogWrite(fanOutPin, fanOutPWM);
+	analogWrite(ledStripPin, ledStripPWM);
 }
 
 void setup()
@@ -99,7 +132,7 @@ void setup()
 	Wire.begin(slaveAddress);
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
-	// Serial.begin(115200);
+	Serial.begin(115200);
 
 	pinMode(heaterPin, OUTPUT);
 	pinMode(dehumidifierPin, OUTPUT);
@@ -107,16 +140,18 @@ void setup()
 	pinMode(fanInPin, OUTPUT);
 	pinMode(fanOutPin, OUTPUT);
 	pinMode(ledStripPin, OUTPUT);
+	pinMode(13, OUTPUT);
 
-	interval = pow(intervalFactor, consts[2]);
 	updateSensor();
 	respond();
 }
 
 void loop()
 {
-	if (millis() % interval == 0)
+	if (millis() % (updateInterval * 5000) == 0)
 	{
+		Serial.print(millis());
+		Serial.println(F(" update"));
 		updateSensor();
 		respond();
 	}
