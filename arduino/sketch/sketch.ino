@@ -11,104 +11,100 @@ DHT dht(2, DHT22);
 #define fanOutPin 5
 #define ledStripPin 6
 
-#define numConsts 6
-byte consts[numConsts] = {
+bool isInitiated = true;
+
+#define numVars 14
+uint8_t vars[numVars] = {
 	32,  // 0 targetTemp
 	1,   // 1 targetHum
 	1,   // 2 updateInterval // 14 * 5000 = 1.16... min
 	255, // 3 fanInPWM
 	255, // 4 fanOutPWM
 	255, // 5 ledStripPWM
-};
-#define targetTemp consts[0]
-#define targetHum consts[1]
-#define updateInterval consts[2]
-#define fanInPWM consts[3]
-#define fanOutPWM consts[4]
-#define ledStripPWM consts[5]
-
-#define numVars 8
-byte vars[numVars] = {
-	0, // 0 temp
-	0, // 1 hum
-	0, // 2 fanInOn
-	0, // 3 fanOutOn
-	0, // 4 ledOn
-	0, // 5 dehumidifierOn
-	0, // 6 lampOn
-	0  // 7 heaterOn
+	0,   // 6 temp
+	0,   // 7 hum
+	0,   // 8 fanInOn
+	0,   // 9 fanOutOn
+	0,   // 10 ledOn
+	0,   // 11 dehumidifierOn
+	0,   // 12 lampOn
+	0	// 13 heaterOn
 };
 
-#define temp vars[0]
-#define hum vars[1]
-#define fanInOn vars[2]
-#define fanOutOn vars[3]
-#define ledOn vars[4]
-#define dehumidifierOn vars[5]
-#define lampOn vars[6]
-#define heaterOn vars[7]
+#define targetTemp vars[0]
+#define targetHum vars[1]
+#define updateInterval vars[2]
+#define fanInPWM vars[3]
+#define fanOutPWM vars[4]
+#define ledStripPWM vars[5]
+#define temp vars[6]
+#define hum vars[7]
+#define fanInOn vars[8]
+#define fanOutOn vars[9]
+#define ledOn vars[10]
+#define dehumidifierOn vars[11]
+#define lampOn vars[12]
+#define heaterOn vars[13]
 
 void updateSensor()
 {
-	temp = dht.readTemperature();
-	hum = dht.readHumidity();
+	temp = dht.readTemperature() + 0.5;
+	hum = dht.readHumidity() + 0.5;
 }
 
-byte buffer[numConsts + numVars + 1];
-bool validateBuffer()
+uint8_t generateChecksum(uint8_t bytes[])
 {
-	byte controle = 0;
-	for (int i = 0; i < sizeof(buffer) - 1; i++)
+	uint8_t sum = 0;
+	for (uint16_t i = 0; i < sizeof(bytes); i++)
 	{
-		controle += buffer[i];
+		sum += bytes[i];
 	}
-	return (buffer[sizeof(buffer) - 1] == controle);
+
+	sum = 255 - sum;
+	return sum;
 }
+
+uint16_t receiveDataPos = 0;
+uint8_t receiveBuffer[2] = {};
 
 void receiveData()
 {
-	int counter = 0;
-	while (Wire.available())
-	{
-		buffer[counter] = Wire.read();
-		counter++;
-	}
+	uint8_t inByte = Wire.read();
+	Serial.print("byte ");
+	Serial.print(receiveDataPos);
+	Serial.print(" ");
+	Serial.println(inByte);
 
-	if (sizeof(buffer) == numConsts + 1)
+	if (receiveDataPos != 2)
 	{
-		if (validateBuffer())
+		receiveBuffer[receiveDataPos] = inByte;
+		receiveDataPos++;
+	}
+	else
+	{
+		uint8_t checkSum = generateChecksum(receiveBuffer);
+
+		if (checkSum == inByte)
 		{
-			for (int i = 0; i < numConsts; i++)
-			{
-				consts[i] = buffer[i];
-			}
+			isInitiated = true;
+			Serial.println("checksum passed\n");
+			vars[receiveBuffer[0]] = receiveBuffer[1];
 			digitalWrite(13, LOW);
+			respond();
 		}
 		else
 		{
 			digitalWrite(13, HIGH);
 		}
+		receiveDataPos = 0;
 	}
-	respond();
 }
 
-int varPos = 0;
+uint16_t varPos = 0;
 void sendData()
 {
-	if (varPos < numConsts)
-	{
-		Wire.write(consts[varPos]);
-		Serial.println(consts[varPos]);
-	}
-	else
-	{
-		updateSensor();
-		Wire.write(vars[varPos - numConsts]);
-		Serial.println(vars[varPos - numConsts]);
-	}
-
-	varPos++;
-	if (varPos == numConsts + numVars)
+	Wire.write(vars[varPos++]);
+	if (varPos == numVars)
 		varPos = 0;
 }
 
@@ -133,7 +129,7 @@ void setup()
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
 	Serial.begin(115200);
-
+	Serial.println("hello");
 	pinMode(heaterPin, OUTPUT);
 	pinMode(dehumidifierPin, OUTPUT);
 	pinMode(lampPin, OUTPUT);
@@ -142,17 +138,13 @@ void setup()
 	pinMode(ledStripPin, OUTPUT);
 	pinMode(13, OUTPUT);
 
-	updateSensor();
 	respond();
 }
 
 void loop()
 {
-	if (millis() % (updateInterval * 5000) == 0)
+	if (millis() % (updateInterval * 5000) == 0 && isInitiated)
 	{
-		Serial.print(millis());
-		Serial.println(F(" update"));
-		updateSensor();
 		respond();
 	}
 	delay(1);

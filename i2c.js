@@ -1,7 +1,7 @@
 
-const i2c = require('i2c-bus');
-const numConsts = 6
-const numVars = 8
+const i2c = require('i2c-bus')
+const numVars = 14
+const arduinoAddress = 0x08
 
 const names = [
 	'targetTemp',
@@ -20,32 +20,27 @@ const names = [
 	'heaterOn'
 ]
 
-
 let i2cArduino
 async function read() {
+	// TODO implement checksum
+
 	if (!i2cArduino) i2cArduino = await i2c.openPromisified(1)
 	let reads = []
-	for (let i = 0; i < numConsts + numVars; i++) {
-		let byte = await i2cArduino.readByte(0x08, 1)
+	for (let i = 0; i < numVars; i++) {
+		const byte = await i2cArduino.readByte(arduinoAddress, 1)
 		reads.push(byte)
 	}
 	return reads
 }
 
 function bytesToHumanReadable(bytes) {
-	if (bytes.length !== numConsts + numVars) {
-		return {
-			error: `received wrong amount of bytes ${bytes.length}, got ${numConsts + numVars}`
-		}
-	}
+	if (bytes.length !== names.length) return 'wrong amount of bytes'
 
 	bytes[2] = bytes[2] * 5
-	bytes[8] = bytes[8] ? true : false
-	bytes[9] = bytes[9] ? true : false
-	bytes[10] = bytes[10] ? true : false
-	bytes[11] = bytes[11] ? true : false
-	bytes[12] = bytes[12] ? true : false
-	bytes[13] = bytes[13] ? true : false
+
+	for (let i = 8; i < 14; i++) {
+		bytes[i] = bytes[i] ? true : false
+	}
 
 	let human = {}
 	for (let i = 0; i < bytes.length; i++) {
@@ -54,12 +49,59 @@ function bytesToHumanReadable(bytes) {
 	return human
 }
 
-function write(varName, number) {
-	let index = names.findIndex
-
+function generateChecksum(bytes) {
+	let sum = 0;
+	for (const byte of bytes) sum += byte
+	sum = 255 - sum;
+	sum = sum % 256
+	return sum;
 }
-(async () => {
+
+async function writeByte(byte) {
+	try {
+		await i2cArduino.i2cWrite(arduinoAddress, 1, Buffer.from([byte]))
+		return 0
+	} catch (err) {
+		return 1
+	}
+}
+
+function genWriteArray(varName, number) {
+	const i = names.findIndex((name) => name === varName)
+	const checkSum = generateChecksum([i, number])
+	return [i, number, checkSum]
+}
+
+let fails = 0
+async function write(varName, number, firstCall = true) {
+	if (!i2cArduino) i2cArduino = await i2c.openPromisified(1)
+	if (firstCall) fails = 0
+
+	for (const byte of genWriteArray(varName, number)) await writeByte(byte)
+
+	let reads = await read()
+	if (reads[i] === number) return `success for ${varName} = ${number}, with ${fails} fails`
+
+	if (fails % 2 == 0) {
+		await writeByte(42)
+		await writeByte(42)
+	}
+
+	let message
+	if (++fails < 20) message = await write(varName, number, false)
+	else return `failed for ${varName} = ${number}, with ${fails} fails`
+
+	return message
+}
+
+async function getValues() {
 	const bytes = await read()
-	console.log(bytesToHumanReadable(bytes))
-})()
-// send = await i2c1.writeByte(0x08, 1, 0x07)
+	return bytesToHumanReadable(bytes)
+}
+
+module.exports = {
+	read,
+	write,
+	bytesToHumanReadable,
+	getValues
+}
