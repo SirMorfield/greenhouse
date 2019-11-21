@@ -94,6 +94,7 @@ async function getValues() {
 	const bytes = await read()
 	return bytesToHumanReadable(bytes)
 }
+
 async function run() {
 	let first = await getValues()
 	console.log(first)

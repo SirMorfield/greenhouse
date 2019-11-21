@@ -87,7 +87,6 @@ void receiveData()
 		if (checkSum == inByte)
 		{
 			isInitiated = true;
-			Serial.println("checksum passed\n");
 			vars[receiveBuffer[0]] = receiveBuffer[1];
 			digitalWrite(13, LOW);
 			respond();
@@ -100,7 +99,7 @@ void receiveData()
 	}
 }
 
-uint16_t varPos = 0;
+uint8_t varPos = 0;
 void sendData()
 {
 	Wire.write(vars[varPos++]);
