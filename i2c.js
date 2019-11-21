@@ -66,18 +66,14 @@ async function writeByte(byte) {
 	}
 }
 
-function genWriteArray(varName, number) {
-	const i = names.findIndex((name) => name === varName)
-	const checkSum = generateChecksum([i, number])
-	return [i, number, checkSum]
-}
-
 let fails = 0
 async function write(varName, number, firstCall = true) {
 	if (!i2cArduino) i2cArduino = await i2c.openPromisified(1)
 	if (firstCall) fails = 0
 
-	for (const byte of genWriteArray(varName, number)) await writeByte(byte)
+	const i = names.findIndex((name) => name === varName)
+	const checkSum = generateChecksum([i, number])
+	for (const byte of [i, number, checkSum]) await writeByte(byte)
 
 	let reads = await read()
 	if (reads[i] === number) return `success for ${varName} = ${number}, with ${fails} fails`
@@ -98,10 +94,21 @@ async function getValues() {
 	const bytes = await read()
 	return bytesToHumanReadable(bytes)
 }
+async function run() {
+	let first = await getValues()
+	console.log(first)
 
-module.exports = {
-	read,
-	write,
-	bytesToHumanReadable,
-	getValues
+	let msg = await write('fanOutPWM', 100)
+	console.log(msg)
+
+	let last = await getValues()
+	console.log(last)
 }
+
+run()
+// module.exports = {
+// 	read,
+// 	write,
+// 	bytesToHumanReadable,
+// 	getValues
+// }

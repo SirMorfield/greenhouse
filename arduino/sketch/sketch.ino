@@ -128,8 +128,8 @@ void setup()
 	Wire.begin(slaveAddress);
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
-	Serial.begin(115200);
-	Serial.println("hello");
+	// Serial.begin(115200);
+	// Serial.println("hello");
 	pinMode(heaterPin, OUTPUT);
 	pinMode(dehumidifierPin, OUTPUT);
 	pinMode(lampPin, OUTPUT);
