@@ -15,7 +15,7 @@ async function add() {
 
 	toWrite = toWrite.join(',') + '\n'
 	await fs.appendFile(path.join(__dirname, 'log.csv'), toWrite);
-	await new Promise((resolve) => setTimeout(resolve, 5 * 1000))
+	await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000))
 	add()
 }
 add()
