@@ -1,24 +1,27 @@
 {
-  "name": "greenhouse",
-  "version": "1.0.0",
-  "description": "",
-  "main": "readLine.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SirMorfield/greenhouse.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/SirMorfield/greenhouse/issues"
-  },
-  "homepage": "https://github.com/SirMorfield/greenhouse#readme",
-  "dependencies": {
-    "express": "^4.17.1",
-    "i2c-bus": "^5.1.0",
-    "pm2": "^4.1.2"
-  }
+	"name": "greenhouse",
+	"version": "1.0.0",
+	"description": "",
+	"main": "readLine.js",
+	"scripts": {
+		"dev": "nodemon ./app.js --config configs/nodemon.json",
+		"production": "NODE_ENV=production pm2 start ./configs/app.json"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/SirMorfield/greenhouse.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/SirMorfield/greenhouse/issues"
+	},
+	"homepage": "https://github.com/SirMorfield/greenhouse#readme",
+	"dependencies": {
+		"express": "^4.17.1",
+		"i2c-bus": "^5.1.0",
+		"nodemon": "^2.0.1",
+		"pm2": "^4.1.2",
+		"socket.io": "^2.3.0"
+	}
 }
