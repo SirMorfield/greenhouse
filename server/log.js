@@ -16,37 +16,44 @@ module.exports = (i2c) => {
 		if (loop) timeout = setTimeout(add, interval)
 	}
 
-	async function getReadings(splitInVars = false) {
+	async function getReadings() {
 		let readings = await fs.readFile(savePath)
 		readings = readings.toString()
 		readings = readings.split('\n')
 		readings = readings.filter((string) => string.length > 1)
 		readings = readings.map((reading) => JSON.parse(reading))
 		readings = readings.filter((reading) => reading.success === true)
+		return readings
+	}
 
-		if (splitInVars) {
-			let newReadings = {
-				dates: [],
-				temps: [],
-				hums: [],
-				timestamps: []
-			}
-			for (const reading of readings) {
-				newReadings.dates.push(reading.translated.date)
-				newReadings.temps.push(reading.translated.temp)
-				newReadings.hums.push(reading.translated.hum)
-				newReadings.timestamps.push(reading.timestamp)
-			}
-			return newReadings
+	async function getReadingsFrontend() {
+		const readings = await getReadings()
+
+		let formated = {
+			hums: [],
+			temps: []
 		}
 
-		return readings
+		for (const reading of readings) {
+			// newReadings.dates.push(reading.translated.date)
+			formated.temps.push({
+				x: reading.timestamp,
+				y: reading.translated.temp
+			})
+			formated.hums.push({
+				x: reading.timestamp,
+				y: reading.translated.hum
+			})
+			// newReadings.timestamps.push(reading.timestamp)
+		}
+		return formated
 	}
 
 
 
 	return {
 		add,
-		getReadings
+		getReadings,
+		getReadingsFrontend
 	}
 }
