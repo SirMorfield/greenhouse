@@ -4,7 +4,7 @@
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>Line Chart Multiple Axes</title>
+	<title>Sensors</title>
 	<script src="/chart.js/Chart.min.js"></script>
 	<script src="/chart.js/utils.js"></script>
 	<style>
@@ -12,76 +12,79 @@
 			-moz-user-select: none;
 			-webkit-user-select: none;
 			-ms-user-select: none;
-		}
-	</style>
-	<style type="text/css">
-		/* Chart.js */
-		@keyframes chartjs-render-animation {
-			from {
-				opacity: .99
-			}
-
-			to {
-				opacity: 1
-			}
-		}
-
-		.chartjs-render-monitor {
-			animation: chartjs-render-animation 1ms
-		}
-
-		.chartjs-size-monitor,
-		.chartjs-size-monitor-expand,
-		.chartjs-size-monitor-shrink {
-			position: absolute;
-			direction: ltr;
-			left: 0;
-			top: 0;
-			right: 0;
-			bottom: 0;
-			overflow: hidden;
-			pointer-events: none;
-			visibility: hidden;
-			z-index: -1
-		}
-
-		.chartjs-size-monitor-expand>div {
-			position: absolute;
-			width: 1000000px;
-			height: 1000000px;
-			left: 0;
-			top: 0
-		}
-
-		.chartjs-size-monitor-shrink>div {
-			position: absolute;
-			width: 200%;
-			height: 200%;
-			left: 0;
-			top: 0
+			width: 100%;
+			max-width: 100%;
+			height: auto;
+			max-height: 90vh;
 		}
 
 		body {
 			background-color: rgb(32, 30, 30);
+			color: white;
+		}
+
+		#lastValues {
+			/* border-collapse: separate; */
+			border-color: white;
+			padding: 10px;
 		}
 	</style>
 </head>
 
 <body class="vsc-initialized">
-	<div style="width:100%;">
-		<div class="chartjs-size-monitor">
-			<div class="chartjs-size-monitor-expand">
-				<div class=""></div>
-			</div>
-			<div class="chartjs-size-monitor-shrink">
-				<div class=""></div>
-			</div>
-		</div>
-		<canvas id="canvas" style="display: block; width: 1067px; height: 533px;" width="1067" height="533" class="chartjs-render-monitor"></canvas>
-	</div>
+	<canvas id="canvas" style="display: block;" class="chartjs-render-monitor"></canvas>
 	<script src="/generateChart.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/main.js"></script>
+
+	<button onclick="socket.emit('read')">read()</button>
+
+	<table id="lastValues">
+		<tr>
+			<td>dehumidifierOn</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>lampOn</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>heaterOn</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>fanInPWM</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>fanOutPWM</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>ledPWM</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>temp</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>hum</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>fanInOn</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>fanOutOn</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>ledOn</td>
+			<td></td>
+		</tr>
+	</table>
 </body>
 
 </html>

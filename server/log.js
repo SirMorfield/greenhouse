@@ -1,52 +1,52 @@
-const fs = require('fs').promises
-const i2c = require('./i2c.js')
-const path = require('path')
-const savePath = path.join(__dirname, 'log.csv')
+module.exports = (i2c) => {
+	const fs = require('fs').promises
+	const path = require('path')
+	const savePath = path.join(__dirname, 'log.csv')
+	let timeout
 
-async function add(loop = true, interval = 5 * 60 * 1000) {
-	const bytes = await i2c.read()
-	const date = (new Date()).toLocaleString('en-GB', { hour12: false })
-	let toWrite = {
-		date,
-		success: bytes.success,
-		temp: bytes.success ? bytes.translated.temp : 0,
-		hum: bytes.success ? bytes.translated.hum : 0,
-	}
-	toWrite = JSON.stringify(toWrite) + '\n'
+	async function add(loop = true, interval = 5 * 60 * 1000) {
+		if (timeout) clearTimeout(timeout)
 
-	await fs.appendFile(savePath, toWrite)
-	if (loop) {
-		await new Promise((resolve) => setTimeout(resolve, interval))
-		add()
-	}
-}
-
-async function getReadings(splitInVars = false) {
-	let readings = await fs.readFile(savePath)
-	readings = readings.toString()
-	readings = readings.split('\n')
-	readings = readings.filter((string) => string.length > 1)
-	readings = readings.map((reading) => JSON.parse(reading))
-	readings = readings.filter((reading) => reading.success === true)
-
-	if (splitInVars) {
-		let newReadings = {
-			dates: [],
-			temps: [],
-			hums: []
+		let bytes = await i2c.read()
+		if (bytes.success) {
+			bytes = JSON.stringify(bytes) + '\n'
+			await fs.appendFile(savePath, toWrite)
 		}
-		for (const reading of readings) {
-			newReadings.dates.push(reading.date)
-			newReadings.temps.push(reading.temp)
-			newReadings.hums.push(reading.hum)
-		}
-		return newReadings
+
+		if (loop) timeout = setTimeout(add, interval)
 	}
 
-	return readings
-}
+	async function getReadings(splitInVars = false) {
+		let readings = await fs.readFile(savePath)
+		readings = readings.toString()
+		readings = readings.split('\n')
+		readings = readings.filter((string) => string.length > 1)
+		readings = readings.map((reading) => JSON.parse(reading))
+		readings = readings.filter((reading) => reading.success === true)
 
-module.exports = {
-	add,
-	getReadings
+		if (splitInVars) {
+			let newReadings = {
+				dates: [],
+				temps: [],
+				hums: [],
+				timestamps: []
+			}
+			for (const reading of readings) {
+				newReadings.dates.push(reading.translated.date)
+				newReadings.temps.push(reading.translated.temp)
+				newReadings.hums.push(reading.translated.hum)
+				newReadings.timestamps.push(reading.timestamp)
+			}
+			return newReadings
+		}
+
+		return readings
+	}
+
+
+
+	return {
+		add,
+		getReadings
+	}
 }
