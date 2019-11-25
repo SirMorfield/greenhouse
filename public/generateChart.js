@@ -5,11 +5,14 @@ let cfg = {
 			label: 'Temperature C',
 			pointBackgroundColor: 'rgb(255, 99, 132)',
 			data: [],
+			yAxisID: 'temp'
+
 		},
 		{
 			label: 'Humidity %',
 			pointBackgroundColor: 'rgb(54, 162, 235)',
 			data: [],
+			yAxisID: 'hum'
 		}]
 	},
 	options: {
@@ -28,10 +31,23 @@ let cfg = {
 				}
 			}],
 			yAxes: [{
+				id: 'hum',
+				type: 'linear',
 				gridLines: {
 					// display: false,
 					color: 'rgba(255,255,255, 0.15)'
-				}
+				},
+				position: 'left'
+			},
+			{
+				id: 'temp',
+				type: 'linear',
+				gridLines: {
+					display: false,
+					color: 'rgba(255,255,255, 0.15)'
+				},
+				position: 'right'
+
 			}]
 		}
 	}
