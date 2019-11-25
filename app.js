@@ -14,6 +14,8 @@ app.get('/', (req, res) => {
 const log = require(path.join(__dirname, 'server/log.js'))(i2c)
 log.add(true, 2 * 60 * 1000)
 
+const lamp = require('server/lamp.js')(i2c)
+
 io.on('connection', async (socket) => {
 	const readings = await log.getReadingsFrontend()
 	socket.emit('readings', readings)
