@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public/index.html'))
 })
 const log = require(path.join(__dirname, 'server/log.js'))(i2c)
-log.add(true, 2000)
+log.add(true, 2 * 60 * 1000)
 
 io.on('connection', async (socket) => {
 	const readings = await log.getReadingsFrontend()
