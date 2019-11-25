@@ -7,9 +7,9 @@ module.exports = (i2c) => {
 	async function add(loop = true, interval = 5 * 60 * 1000) {
 		if (timeout) clearTimeout(timeout)
 
-		let bytes = await i2c.read()
-		if (bytes.success) {
-			bytes = JSON.stringify(bytes) + '\n'
+		let toWrite = await i2c.read()
+		if (toWrite.success) {
+			toWrite = JSON.stringify(toWrite) + '\n'
 			await fs.appendFile(savePath, toWrite)
 		}
 

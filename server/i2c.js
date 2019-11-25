@@ -40,7 +40,7 @@ function generateChecksum(bytes) {
 
 async function readByte() {
 	try {
-		Arduino.readByte(arduinoAddress, 1)
+		return await Arduino.readByte(arduinoAddress, 1)
 	} catch (err) { console.error(err) }
 }
 
@@ -49,10 +49,14 @@ let isReading = false
 class Reader extends EventEmitter { }
 const reader = new Reader()
 
-async function read(firstCall = true) {
-	if (Date.now() - lastRead.timestamp < 15000) return lastRead
-
+async function read() {
+	const timeSinceLastRead = (Date.now() - lastRead.timestamp)
+	if (timeSinceLastRead < 10000) {
+		console.log(`reusing reading from ${Math.round(timeSinceLastRead / 1000)} seconds ago`)
+		return lastRead
+	}
 	if (isReading) {
+		console.log('isReading')
 		return await new Promise((resolve) => {
 			reader.on('newRead', (read) => resolve(read))
 		})
@@ -60,8 +64,8 @@ async function read(firstCall = true) {
 
 	isReading = true
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
-	if (firstCall) readFails = 0
 
+	let res
 	for (let i = 0; i < 20; i++) {
 		let bytes = []
 		for (let i = 0; i < numVars; i++) {
@@ -72,7 +76,7 @@ async function read(firstCall = true) {
 		const checkSum = await readByte()
 		const correctCheckSum = generateChecksum(bytes)
 		if (checkSum === correctCheckSum) {
-			let res = {
+			res = {
 				success: true,
 				bytes,
 				translated: translate(bytes),
@@ -82,15 +86,16 @@ async function read(firstCall = true) {
 			isReading = false
 			lastRead = res
 			reader.emit('newRead', res);
-			return res
+			break
 		}
-
+		console.log('read failed')
 		if (i % 2 == 0) {
 			await readByte()
 			await readByte()
 		}
 	}
-	process.exit()
+	return res
+	// process.exit()
 }
 
 async function writeByte(byte) {
@@ -124,7 +129,7 @@ async function write(varName, number) {
 				toWrites.pop()
 				write(toWrite.varName, toWrite.number)
 			}
-			return
+			break
 		}
 
 		if (i % 2 == 0) {
@@ -132,7 +137,7 @@ async function write(varName, number) {
 			await writeByte(42)
 		}
 	}
-	process.exit()
+	// process.exit()
 }
 
 module.exports = {

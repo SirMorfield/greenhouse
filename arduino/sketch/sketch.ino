@@ -21,9 +21,9 @@ uint8_t vars[numVars] = {
 	0, // ledPWM
 	0, // temp
 	0, // hum
-	1, // fanInOn
-	1, // fanOutOn
-	1  //  ledOn
+	0, // fanInOn
+	0, // fanOutOn
+	0  //  ledOn
 };
 
 #define dehumidifierOn vars[0]

@@ -47,7 +47,8 @@ window.onload = function () {
 };
 
 function updateData({ temps, hums }) {
-	lineChartData.labels = dates
+	console.log(temps)
+	console.log(hums)
 	cfg.data.datasets[0].data = temps
 	cfg.data.datasets[1].data = hums
 	scatterChart.update();
