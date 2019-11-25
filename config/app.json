@@ -1,0 +1,14 @@
+{
+	"apps": [
+		{
+			"name": "greenhouse",
+			"script": "./app.js",
+			"exec_mode": "fork",
+			"max_restarts": 1000,
+			"ignore_watch": [
+				"node_modules",
+				"server/log.csv"
+			]
+		}
+	]
+}

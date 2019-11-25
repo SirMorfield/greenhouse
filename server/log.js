@@ -8,6 +8,7 @@ module.exports = (i2c) => {
 		if (timeout) clearTimeout(timeout)
 
 		let toWrite = await i2c.read()
+		console.log('saving', toWrite)
 		if (toWrite.success) {
 			toWrite = JSON.stringify(toWrite) + '\n'
 			await fs.appendFile(savePath, toWrite)
@@ -35,7 +36,6 @@ module.exports = (i2c) => {
 		}
 
 		for (const reading of readings) {
-			// newReadings.dates.push(reading.translated.date)
 			formated.temps.push({
 				x: reading.timestamp,
 				y: reading.translated.temp
@@ -44,7 +44,6 @@ module.exports = (i2c) => {
 				x: reading.timestamp,
 				y: reading.translated.hum
 			})
-			// newReadings.timestamps.push(reading.timestamp)
 		}
 		return formated
 	}

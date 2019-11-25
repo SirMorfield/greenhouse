@@ -109,20 +109,21 @@ let toWrites = []
 async function write(varName, number) {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 	if (isWriting) {
+		console.log('in que')
 		toWrites.push({ varName, number })
 		return
 	}
 
-	const i = names.findIndex((name) => name === varName)
-	const checkSum = generateChecksum([i, number])
+	const varI = names.findIndex((name) => name === varName)
+	const checkSum = generateChecksum([varI, number])
 
 	isWriting = true
 	for (let i = 0; i < 20; i++) {
-		for (const byte of [i, number, checkSum]) await writeByte(byte)
+		for (const byte of [varI, number, checkSum]) await writeByte(byte)
 
 		let reads = await read()
 
-		if (reads.bytes[i] === number) {
+		if (reads.bytes[varI] === number) {
 			isWriting = false
 			if (toWrites.length > 0) {
 				const toWrite = toWrites[toWrites.length - 1]
@@ -136,6 +137,7 @@ async function write(varName, number) {
 			await writeByte(42)
 			await writeByte(42)
 		}
+		if (i == 19) console.log('fatal')
 	}
 	// process.exit()
 }
