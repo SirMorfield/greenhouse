@@ -1,6 +1,6 @@
 const schedule = require('node-schedule')
 
-module.exports = async () => {
+module.exports = async (i2c) => {
 	const on = schedule.scheduleJob('* * 4 * * *', async () => {
 		await i2c.write('lampOn', 1)
 		await i2c.write('heaterOn', 1)

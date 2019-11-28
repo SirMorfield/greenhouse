@@ -49,11 +49,13 @@ let isReading = false
 class Reader extends EventEmitter { }
 const reader = new Reader()
 
-async function read() {
-	const timeSinceLastRead = (Date.now() - lastRead.timestamp)
-	if (timeSinceLastRead < 10000) {
-		console.log(`reusing reading from ${(timeSinceLastRead / 1000).toFixed(3)} seconds ago`)
-		return lastRead
+async function read(reuse = true) {
+	if (reuse) {
+		const timeSinceLastRead = (Date.now() - lastRead.timestamp)
+		if (timeSinceLastRead < 10000) {
+			console.log(`reusing reading from ${(timeSinceLastRead / 1000).toFixed(3)} seconds ago`)
+			return lastRead
+		}
 	}
 	if (isReading) {
 		console.log('isReading')
