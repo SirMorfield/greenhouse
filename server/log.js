@@ -1,7 +1,7 @@
 module.exports = (i2c) => {
 	const fs = require('fs').promises
 	const path = require('path')
-	const savePath = path.join(__dirname, 'log.csv')
+	const savePath = path.join(__dirname, 'log.txt')
 	let timeout
 
 	async function add(loop = true, interval = 5 * 60 * 1000) {
@@ -14,7 +14,7 @@ module.exports = (i2c) => {
 			await fs.appendFile(savePath, toWrite)
 		}
 
-		if (loop) timeout = setTimeout(true, interval)
+		if (loop) timeout = setTimeout(() => { add(loop, interval) }, interval)
 	}
 
 	async function getReadings() {
