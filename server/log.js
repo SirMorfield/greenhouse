@@ -4,17 +4,19 @@ module.exports = (i2c) => {
 	const savePath = path.join(__dirname, 'log.txt')
 	let timeout
 
+	function timestampToHuman(timestamp) {
+		return ((new Date(timestamp)).toString()).replace(/\ GMT.*$/, '')
+	}
+
 	async function add(loop = true, interval = 5 * 60 * 1000) {
 		if (timeout) clearTimeout(timeout)
 
-		let toWrite = await i2c.read(false)
-		if (toWrite.success) {
-			delete toWrite.translated
-			toWrite = JSON.stringify(toWrite) + '\n'
-			await fs.appendFile(savePath, toWrite)
-		}
+		let toSave = await i2c.read()
+		toSave.timestamp = Date.now()
+		toSave = `${JSON.stringify(toSave)}\n`
+		await fs.appendFile(savePath, toSave)
 
-		if (loop) timeout = setTimeout(() => { add(loop, interval) }, interval)
+		if (loop) timeout = setTimeout(() => { add(true, interval) }, interval)
 	}
 
 	async function getReadings() {
@@ -24,11 +26,18 @@ module.exports = (i2c) => {
 		readings = readings.filter((string) => string.length > 1)
 		readings = readings.map((reading) => JSON.parse(reading))
 		readings = readings.filter((reading) => reading.success === true)
+
+		readings.map((reading) => {
+			reading.translated = i2c.translate(reading.bytes)
+			reading.date = timestampToHuman(reading.timestamp)
+			return reading
+		})
+
 		return readings
 	}
 
 	async function getReadingsFrontend() {
-		const readings = await getReadings()
+		let readings = await getReadings()
 
 		let formated = {
 			hums: [],
@@ -36,14 +45,13 @@ module.exports = (i2c) => {
 		}
 
 		for (const reading of readings) {
-			const translated = i2c.translate(reading.bytes)
 			formated.temps.push({
 				x: reading.timestamp,
-				y: translated.temp
+				y: reading.translated.temp
 			})
 			formated.hums.push({
 				x: reading.timestamp,
-				y: translated.hum
+				y: reading.translated.hum
 			})
 		}
 		return formated

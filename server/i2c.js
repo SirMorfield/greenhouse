@@ -44,32 +44,24 @@ async function readByte() {
 	} catch (err) { console.error(err) }
 }
 
-let lastRead = { timestamp: 0 }
 let isReading = false
 class Reader extends EventEmitter { }
 const reader = new Reader()
 
-async function read(reuse = true) {
-	if (reuse) {
-		const timeSinceLastRead = (Date.now() - lastRead.timestamp)
-		if (timeSinceLastRead < 10000) {
-			console.log(`reusing reading from ${(timeSinceLastRead / 1000).toFixed(3)} seconds ago`)
-			return lastRead
-		}
-	}
+async function read() {
 	if (isReading) {
-		console.log('isReading')
-		return await new Promise((resolve) => {
-			reader.on('newRead', (read) => resolve(read))
+		await new Promise((resolve) => {
+			reader.on('newRead', resolve)
 		})
+		const reads = await read()
+		return reads
 	}
 
 	isReading = true
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
-	let res
 	let fails = 0
-	while (true) {
+	while (fails < 20) {
 		let bytes = []
 		for (let i = 0; i < numVars; i++) {
 			const byte = await readByte()
@@ -79,30 +71,21 @@ async function read(reuse = true) {
 		const checkSum = await readByte()
 		const correctCheckSum = generateChecksum(bytes)
 		if (checkSum === correctCheckSum) {
-			res = {
+			let res = {
 				success: true,
 				bytes,
-				translated: translate(bytes),
-				date: (new Date()).toLocaleString('en-GB', { hour12: false }),
-				timestamp: Date.now()
 			}
 			isReading = false
-			lastRead = res
 			reader.emit('newRead', res);
-			break
+			return res
 		}
-		fails++
-		if (fails % 2 == 0) {
+
+		if (fails++ % 2 == 0) {
 			await readByte()
 			await readByte()
-		}
-		if (fails == 20) {
-			console.log('read failed')
-			break
 		}
 	}
-	return res
-	// process.exit()
+	return { success: false, message: `all ${fails} tries failed` }
 }
 
 async function writeByte(byte) {
@@ -112,46 +95,62 @@ async function writeByte(byte) {
 }
 
 let isWriting = false
-let toWrites = []
-async function write(varName, number) {
-	if (!Arduino) Arduino = await i2c.openPromisified(1)
-	if (isWriting) {
-		console.log(`${varName} = ${number} in que`)
-		toWrites.push({ varName, number })
-		return
-	}
+class Writer extends EventEmitter { }
+const writer = new Writer()
 
+async function write(varName, number) {
 	const varI = names.findIndex((name) => name === varName)
+	if (varI < 0) return { success: false, message: `variable ${varName} not found` }
 	const checkSum = generateChecksum([varI, number])
 
-	isWriting = true
-	let fails = 0
-	while (true) {
-		for (const byte of [varI, number, checkSum]) await writeByte(byte)
+	if (isWriting) {
+		await new Promise((resolve) => {
+			writer.on('writeDone', resolve)
+		})
+		const msg = await write(varName, number)
+		return msg
+	}
 
-		let reads = await read(false)
+
+	let fails = 0
+	let toReturn
+
+	isWriting = true
+	if (!Arduino) Arduino = await i2c.openPromisified(1)
+
+	while (true) {
+		await writeByte(varI)
+		await writeByte(number)
+		await writeByte(checkSum)
+
+		const reads = await read()
+
 		if (reads.bytes[varI] === number) {
 			isWriting = false
+			toReturn = { success: true }
 			break
 		}
 
-		fails++
-		if (fails % 2 == 0) {
+		if (reads.success == false) {
+			toReturn = { success: false, message: `read failed with ${reads.message}` }
+		}
+
+
+		if (fails++ % 2 == 0) {
 			await writeByte(42)
 			await writeByte(42)
 		}
-		if (fails == 19) {
-			console.log(`${varName} = ${number} fatal`)
+
+		if (fails == 10) {
+			toReturn = { success: false, message: `all ${fails} tries failed` }
+			isWriting = false
 			break
 		}
 	}
 
 	isWriting = false
-	if (toWrites.length > 0) {
-		const toWrite = toWrites[toWrites.length - 1]
-		toWrites.pop()
-		write(toWrite.varName, toWrite.number)
-	}
+	writer.emit('writeDone')
+	return toReturn
 }
 
 module.exports = {
