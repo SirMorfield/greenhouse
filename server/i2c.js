@@ -68,7 +68,8 @@ async function read(reuse = true) {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	let res
-	for (let i = 0; i < 20; i++) {
+	let fails = 0
+	while (true) {
 		let bytes = []
 		for (let i = 0; i < numVars; i++) {
 			const byte = await readByte()
@@ -90,10 +91,14 @@ async function read(reuse = true) {
 			reader.emit('newRead', res);
 			break
 		}
-		console.log('read failed')
-		if (i % 2 == 0) {
+		fails++
+		if (fails % 2 == 0) {
 			await readByte()
 			await readByte()
+		}
+		if (fails == 20) {
+			console.log('read failed')
+			break
 		}
 	}
 	return res
@@ -111,7 +116,7 @@ let toWrites = []
 async function write(varName, number) {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 	if (isWriting) {
-		console.log('in que')
+		console.log(`${varName} = ${number} in que`)
 		toWrites.push({ varName, number })
 		return
 	}
@@ -120,28 +125,33 @@ async function write(varName, number) {
 	const checkSum = generateChecksum([varI, number])
 
 	isWriting = true
-	for (let i = 0; i < 20; i++) {
+	let fails = 0
+	while (true) {
 		for (const byte of [varI, number, checkSum]) await writeByte(byte)
 
-		let reads = await read()
-
+		let reads = await read(false)
 		if (reads.bytes[varI] === number) {
 			isWriting = false
-			if (toWrites.length > 0) {
-				const toWrite = toWrites[toWrites.length - 1]
-				toWrites.pop()
-				write(toWrite.varName, toWrite.number)
-			}
 			break
 		}
 
-		if (i % 2 == 0) {
+		fails++
+		if (fails % 2 == 0) {
 			await writeByte(42)
 			await writeByte(42)
 		}
-		if (i == 19) console.log('fatal')
+		if (fails == 19) {
+			console.log(`${varName} = ${number} fatal`)
+			break
+		}
 	}
-	// process.exit()
+
+	isWriting = false
+	if (toWrites.length > 0) {
+		const toWrite = toWrites[toWrites.length - 1]
+		toWrites.pop()
+		write(toWrite.varName, toWrite.number)
+	}
 }
 
 module.exports = {

@@ -7,7 +7,7 @@ module.exports = (i2c) => {
 	async function add(loop = true, interval = 5 * 60 * 1000) {
 		if (timeout) clearTimeout(timeout)
 
-		let toWrite = await i2c.read()
+		let toWrite = await i2c.read(false)
 		if (toWrite.success) {
 			delete toWrite.translated
 			toWrite = JSON.stringify(toWrite) + '\n'
