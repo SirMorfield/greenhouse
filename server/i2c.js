@@ -1,42 +1,8 @@
 const EventEmitter = require('events')
 const i2c = require('i2c-bus')
 const arduinoAddress = 0x08
+const translator = require('./translator.js')
 let Arduino
-
-const names = [
-	'dehumidifierOn',
-	'lampOn',
-	'heaterOn',
-	'fanInPWM',
-	'fanOutPWM',
-	'ledPWM',
-	'temp',
-	'hum',
-	'fanInOn',
-	'fanOutOn',
-	'ledOn'
-]
-const numVars = names.length
-
-function translate(bytes) {
-	if (bytes.length !== names.length) {
-		console.error('wrong amount of bytes')
-	}
-
-	let human = {}
-	for (let i = 0; i < bytes.length; i++) {
-		human[names[i]] = bytes[i]
-	}
-	return human
-}
-
-function generateChecksum(bytes) {
-	let sum = 0;
-	for (const byte of bytes) sum += byte
-	sum = sum % 256
-	sum = 255 - sum;
-	return sum;
-}
 
 async function readByte() {
 	try {
@@ -50,9 +16,7 @@ const reader = new Reader()
 
 async function read() {
 	if (isReading) {
-		await new Promise((resolve) => {
-			reader.on('newRead', resolve)
-		})
+		await new Promise(resolve => reader.on('readDone', resolve))
 		const reads = await read()
 		return reads
 	}
@@ -63,29 +27,21 @@ async function read() {
 	let fails = 0
 	while (fails < 20) {
 		let bytes = []
-		for (let i = 0; i < numVars; i++) {
+		for (let i = 0; i < translator.numBytesToRead; i++) {
 			const byte = await readByte()
 			bytes.push(byte)
 		}
 
-		const checkSum = await readByte()
-		const correctCheckSum = generateChecksum(bytes)
-		if (checkSum === correctCheckSum) {
-			let res = {
-				success: true,
-				bytes,
-			}
+		const res = translator.translate(bytes)
+		if (res.error === undefined) {
+			reader.emit('readDone')
 			isReading = false
-			reader.emit('newRead', res);
 			return res
 		}
 
-		if (fails++ % 2 == 0) {
-			await readByte()
-			await readByte()
-		}
+		if (fails++ % 2 == 0) await readByte()
 	}
-	return { success: false, message: `all ${fails} tries failed` }
+	return { error: `all ${fails} tries failed` }
 }
 
 async function writeByte(byte) {
@@ -98,19 +54,12 @@ let isWriting = false
 class Writer extends EventEmitter { }
 const writer = new Writer()
 
-async function write(varName, number) {
-	const varI = names.findIndex((name) => name === varName)
-	if (varI < 0) return { success: false, message: `variable ${varName} not found` }
-	const checkSum = generateChecksum([varI, number])
-
+async function write(varName, int) {
 	if (isWriting) {
-		await new Promise((resolve) => {
-			writer.on('writeDone', resolve)
-		})
-		const msg = await write(varName, number)
+		await new Promise((resolve) => writer.on('writeDone', resolve))
+		const msg = await write(varName, int)
 		return msg
 	}
-
 
 	let fails = 0
 	let toReturn
@@ -119,31 +68,25 @@ async function write(varName, number) {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	while (true) {
-		await writeByte(varI)
-		await writeByte(number)
-		await writeByte(checkSum)
+		const bytes = translator.serialize(varName, int)
+		for (const byte of bytes) await writeByte(byte)
 
 		const reads = await read()
 
-		if (reads.bytes[varI] === number) {
-			isWriting = false
-			toReturn = { success: true }
+		if (reads.error) {
+			toReturn = { error: `read failed with ${reads.error}` }
 			break
 		}
 
-		if (reads.success == false) {
-			toReturn = { success: false, message: `read failed with ${reads.message}` }
+		if (reads.deserialized[varName] === int) {
+			toReturn = {}
+			break
 		}
 
+		if (fails++ % 2 == 0) await writeByte(42)
 
-		if (fails++ % 2 == 0) {
-			await writeByte(42)
-			await writeByte(42)
-		}
-
-		if (fails == 10) {
-			toReturn = { success: false, message: `all ${fails} tries failed` }
-			isWriting = false
+		if (fails == 15) {
+			toReturn = { error: `all ${fails} tries failed` }
 			break
 		}
 	}
@@ -155,7 +98,5 @@ async function write(varName, number) {
 
 module.exports = {
 	read,
-	write,
-	names,
-	translate
+	write
 }
