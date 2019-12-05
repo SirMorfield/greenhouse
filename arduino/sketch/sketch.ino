@@ -38,7 +38,7 @@ uint8_t varSizes[numVars] = {
 	1,  // fanInOn
 	1,  // fanOutOn
 	1   // ledOn
-}
+};
 // 1 + 1 + 1 + 8 + 8 + 8 + 10 + 10 + 1 + 1 + 1 = 50
 // / 8  = 6.25
 // = 7
@@ -65,13 +65,13 @@ void updateBytesToSend()
 			if (bitInBytePos == 0)
 			{
 				bitInBytePos = 7;
-				varsToSendPos++
+				varsToSendPos++;
 			}
 			else
-				bitInBytePos--
+				bitInBytePos--;
 		}
 	}
-	bytesToSend[numBytesToSend - 1] generateChecksum(bytesToSend, numBytesToSend - 1)
+	bytesToSend[numBytesToSend - 1] = generateChecksum(bytesToSend, numBytesToSend - 1);
 }
 
 #define dehumidifierOn vars[0]
@@ -137,10 +137,10 @@ void sendData()
 
 	Wire.write(bytesToSend[sendDataPos]);
 
-	if (sendDataPos < numBytesToSend )
+	if (sendDataPos == (numBytesToSend - 1))
 		sendDataPos = 0;
 	else
-		sendDataPos++
+		sendDataPos++;
 }
 
 void respond()

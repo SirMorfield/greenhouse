@@ -7,7 +7,7 @@ let Arduino
 async function readByte() {
 	try {
 		return await Arduino.readByte(arduinoAddress, 1)
-	} catch (err) { console.error(err) }
+	} catch (err) { return { error: err } }
 }
 
 let isReading = false
@@ -29,6 +29,7 @@ async function read() {
 		let bytes = []
 		for (let i = 0; i < translator.numBytesToRead; i++) {
 			const byte = await readByte()
+			if (byte.error) return { error: byte.error }
 			bytes.push(byte)
 		}
 
@@ -47,7 +48,7 @@ async function read() {
 async function writeByte(byte) {
 	try {
 		await Arduino.i2cWrite(arduinoAddress, 1, Buffer.from([byte]))
-	} catch (err) { console.error(err) }
+	} catch (err) { return { error: err } }
 }
 
 let isWriting = false
@@ -69,7 +70,13 @@ async function write(varName, int) {
 
 	while (true) {
 		const bytes = translator.serialize(varName, int)
-		for (const byte of bytes) await writeByte(byte)
+		for (const byte of bytes) {
+			let res = await writeByte(byte)
+			if (res.error) {
+				toReturn = res.error
+				break
+			}
+		}
 
 		const reads = await read()
 

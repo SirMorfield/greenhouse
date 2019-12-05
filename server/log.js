@@ -28,7 +28,16 @@ module.exports = (i2c) => {
 		}
 
 		arr = arr.map((str) => parseInt(str))
-		const obj = translator.intsToObj(arr)
+
+		let obj
+		try {
+			obj = translator.intsToObj(arr)
+		} catch (err) {
+			return {
+				error: 'cannot parse',
+				deserialized: arr
+			}
+		}
 
 		return {
 			deserialized: arr,
