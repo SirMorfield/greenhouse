@@ -25,8 +25,10 @@ async function read() {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	let fails = 0
-	while (fails < 20) {
-		let bytes = []
+	let errors = []
+
+	while (fails < 1) {
+		bytes = []
 		for (let i = 0; i < translator.numBytesToRead; i++) {
 			const byte = await readByte()
 			if (byte.error) return { error: byte.error }
@@ -41,8 +43,13 @@ async function read() {
 		}
 
 		if (fails++ % 2 == 0) await readByte()
+
+		errors.push({
+			bytes: JSON.stringify(bytes),
+			error: res.error
+		})
 	}
-	return { error: `all ${fails} tries failed` }
+	return { error: errors }
 }
 
 async function writeByte(byte) {
@@ -103,7 +110,8 @@ async function write(varName, int) {
 	return toReturn
 }
 
-module.exports = {
-	read,
-	write
-}
+read().then(console.log)
+// module.exports = {
+// 	read,
+// 	write
+// }

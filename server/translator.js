@@ -27,43 +27,41 @@ class Translator {
 			1   // ledOn
 		]
 		this.numVars = this.names.length
-		this.numBytesToRead = this.numVars + 1 // 1 byte checksum
+		this.numBytesToRead = 8
 	}
-	bitRead(byte, pos) {
-		let bitArray = byte.toString(2)
-
-		if (pos < bitArray.length - 1) return 0
-		return bitArray[bitArray.length - 1 - pos] === '0' ? 0 : 1
+	toObject(names, values) {
+		let result = {};
+		for (let i = 0; i < names.length; i++)
+			result[names[i]] = values[i]
+		return result
 	}
 	deserializeBytes(bytes) {
-		let deserialized = []
-		let bitInBytePos = 7
-		let byteToReadPos = 0
+		let toBits = bytes.map((byte) => (byte.toString(2)).padStart(8, '0'))
+		toBits = toBits.join('')
 
+		let bits = []
+		let offset = 0
 		for (const varSize of this.varSizes) {
-			let bitArray = ''
-			for (let i = 0; i < varSize; i++) {
-				bitArray += this.bitRead(bytes[byteToReadPos], bitInBytePos)
-				if (bitInBytePos == 0) {
-					bitInBytePos = 7
-					byteToReadPos++
-				}
-				else bitInBytePos--
-			}
-			deserialized.push(bitArray)
+			let x = toBits.slice(offset, offset + varSize)
+			bits.push(x)
+
+			offset += varSize
 		}
-		deserialized.push(bytes[bytes.length - 1]) // checksum
-		deserialized.map(int => parseInt(int, 2))
 
-		deserialized[6] *= 0.1 // temp
-		deserialized[7] *= 0.1 // hum
+		// console.log(nums)
+		let nums = bits.map(str => parseInt(str, 2))
 
-		return deserialized
+		// deserialized[6] *= parseFloat((deserialized[6] * 0.1).toFixed(2)) // temp
+		// deserialized[7] *= parseFloat((deserialized[6] * 0.1).toFixed(2)) // hum
+		return {
+			bits,
+			nums
+		}
 	}
-	intsToObj(bytes) {
+	intsToObj(nums) {
 		let human = {}
 		for (let i = 0; i < this.names.length; i++) {
-			human[this.names[i]] = bytes[i]
+			human[this.names[i]] = nums[i]
 		}
 		return human
 	}
@@ -74,24 +72,23 @@ class Translator {
 		sum = 255 - sum;
 		return sum;
 	}
-	isValidChecksum(bytes) {
-		const checksum = bytes[bytes.length - 1]
-		bytes = bytes.splice(-1, 1)
-		const correctChecksum = this.generateChecksum(bytes)
-
-		return checksum === correctChecksum
-	}
 	translate(bytes) {
 		try {
-			let deserialized = this.deserializeBytes(bytes)
-			if (!this.isValidChecksum(deserialized)) return { error: 'Checksum failed' }
+			let bytesWithoutChecksum = JSON.parse(JSON.stringify(bytes))
+			let checksum = bytesWithoutChecksum.pop()
+			const correctChecksum = this.generateChecksum(bytesWithoutChecksum)
 
-			let obj = intsToObj(deserialized)
-			obj = applyTransformation(obj)
+			if (checksum !== correctChecksum) {
+				return { error: `checksum: ${checksum} correctChecksum: ${correctChecksum}` }
+			}
+
+			let deserialized = this.deserializeBytes(bytesWithoutChecksum)
+			let obj = this.intsToObj(deserialized.nums)
 
 			return {
-				bytes,
-				deserialized,
+				bytes: bytes,
+				bytesAsBitStr: bytes.map((byte) => (byte.toString(2)).padStart(8, '0')),
+				...deserialized,
 				translated: obj
 			}
 		} catch (err) { return { error: err } }
@@ -105,4 +102,6 @@ class Translator {
 	}
 }
 
+// let a = new Translator()
+// console.log(a.translate([192, 32, 32, 32, 0, 1, 128, 94]))
 module.exports = new Translator()
