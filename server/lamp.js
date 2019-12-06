@@ -12,7 +12,7 @@ module.exports = async (i2c) => {
 	})
 
 	let d = new Date()
-	let hour = d.getHours() + (d.getMinutes() * 0.016667) + (d.getSeconds() * 0.0016667)
+	let hour = d.getHours() - 1 + (d.getMinutes() * 1.6667e-2) + (d.getSeconds() * 1.6667e-3)
 	let write = (hour >= 4 && hour <= 22) ? 1 : 0
 	await i2c.write('lampOn', write)
 	await i2c.write('heaterOn', write)
