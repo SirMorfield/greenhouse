@@ -13,17 +13,17 @@ DHT dht(2, DHT22);
 
 #define numVars 11
 uint16_t vars[numVars] = {
-	65535, // dehumidifierOn
-	65535, // lampOn
-	65535, // heaterOn
-	65535, // fanInPWM
-	65535, // fanOutPWM
-	65535, // ledPWM
-	65535, // temp
-	65535, // hum
-	65535, // fanInOn
-	65535, // fanOutOn
-	65535  // ledOn
+	0, // dehumidifierOn
+	0, // lampOn
+	0, // heaterOn
+	0, // fanInPWM
+	0, // fanOutPWM
+	0, // ledPWM
+	0, // temp
+	0, // hum
+	0, // fanInOn
+	0, // fanOutOn
+	0  // ledOn
 };
 
 uint8_t varSizes[numVars] = {
@@ -57,32 +57,15 @@ void updateBytesToSend()
 		uint8_t numBitsToRead = varSizes[i];
 		uint16_t toRead = vars[i];
 
-		// Serial.println("");
 		for (int8_t bitPos = numBitsToRead - 1; bitPos >= 0; bitPos--)
 		{
 			uint8_t bit = bitRead(toRead, bitPos);
 			uint8_t byte = bytesToSend[varsToSendPos];
-			// Serial.print(toRead, BIN);
-			// Serial.print(",");
-			// Serial.print(bitPos);
-			// Serial.print(",");
-			// Serial.print(bit);
-			// Serial.print(",");
-			// Serial.print(bitInBytePos);
-			// Serial.print(",");
-			// Serial.print(byte, BIN);
 
 			bitWrite(byte, bitInBytePos, bit);
 			bytesToSend[varsToSendPos] = byte;
-			// Serial.print(",");
-			// Serial.print(varsToSendPos);
-			// Serial.print(",");
-			// Serial.print(byte, BIN);
-			// Serial.println("");
-
 			if (bitInBytePos-- == 0)
 			{
-				// Serial.println("");
 				bitInBytePos = 7;
 				varsToSendPos++;
 			}
@@ -134,7 +117,6 @@ void receiveData()
 		{
 			vars[receiveBuffer[0]] = receiveBuffer[1];
 			digitalWrite(13, LOW);
-			respond();
 		}
 		else
 			digitalWrite(13, HIGH);
@@ -148,11 +130,10 @@ void sendData()
 {
 	if (sendDataPos == 0)
 	{
-		// respond();
+		respond();
 		updateBytesToSend();
 	}
 	Wire.write(bytesToSend[sendDataPos]);
-	Serial.println(bytesToSend[sendDataPos], BIN);
 	if (sendDataPos++ == (numBytesToSend - 1))
 		sendDataPos = 0;
 }
@@ -184,14 +165,6 @@ void respond()
 
 void setup()
 {
-	Serial.begin(115200);
-	// updateBytesToSend();
-	// Serial.println("----");
-	// for (uint8_t i = 0; i < numBytesToSend; i++)
-	// {
-	// 	Serial.println(bytesToSend[i], BIN);
-	// }
-
 	dht.begin();
 	Wire.begin(slaveAddress);
 	Wire.onReceive(receiveData);
@@ -203,8 +176,6 @@ void setup()
 	pinMode(fanOutPin, OUTPUT);
 	pinMode(ledPin, OUTPUT);
 	pinMode(13, OUTPUT);
-
-	respond();
 }
 
 void loop() {}

@@ -27,7 +27,7 @@ async function read() {
 	let fails = 0
 	let errors = []
 
-	while (fails < 1) {
+	while (fails < translator.numBytesToRead + 1) {
 		bytes = []
 		for (let i = 0; i < translator.numBytesToRead; i++) {
 			const byte = await readByte()
@@ -45,7 +45,7 @@ async function read() {
 		if (fails++ % 2 == 0) await readByte()
 
 		errors.push({
-			bytes: JSON.stringify(bytes),
+			bytes: bytes,
 			error: res.error
 		})
 	}
@@ -86,9 +86,8 @@ async function write(varName, int) {
 		}
 
 		const reads = await read()
-
 		if (reads.error) {
-			toReturn = { error: `read failed with ${reads.error}` }
+			toReturn = reads.error
 			break
 		}
 
@@ -99,7 +98,7 @@ async function write(varName, int) {
 
 		if (fails++ % 2 == 0) await writeByte(42)
 
-		if (fails == 15) {
+		if (fails == 10) {
 			toReturn = { error: `all ${fails} tries failed` }
 			break
 		}
@@ -110,8 +109,7 @@ async function write(varName, int) {
 	return toReturn
 }
 
-read().then(console.log)
-// module.exports = {
-// 	read,
-// 	write
-// }
+module.exports = {
+	read,
+	write
+}

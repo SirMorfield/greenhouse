@@ -48,20 +48,19 @@ class Translator {
 			offset += varSize
 		}
 
-		// console.log(nums)
-		let nums = bits.map(str => parseInt(str, 2))
+		let vars = bits.map(str => parseInt(str, 2))
 
-		// deserialized[6] *= parseFloat((deserialized[6] * 0.1).toFixed(2)) // temp
-		// deserialized[7] *= parseFloat((deserialized[6] * 0.1).toFixed(2)) // hum
+		vars[6] = parseFloat((vars[6] * 0.1).toFixed(2)) // temp
+		vars[7] = parseFloat((vars[7] * 0.1).toFixed(2)) // hum
 		return {
 			bits,
-			nums
+			vars
 		}
 	}
-	intsToObj(nums) {
+	intsToObj(vars) {
 		let human = {}
 		for (let i = 0; i < this.names.length; i++) {
-			human[this.names[i]] = nums[i]
+			human[this.names[i]] = vars[i]
 		}
 		return human
 	}
@@ -83,11 +82,10 @@ class Translator {
 			}
 
 			let deserialized = this.deserializeBytes(bytesWithoutChecksum)
-			let obj = this.intsToObj(deserialized.nums)
+			let obj = this.intsToObj(deserialized.vars)
 
 			return {
 				bytes: bytes,
-				bytesAsBitStr: bytes.map((byte) => (byte.toString(2)).padStart(8, '0')),
 				...deserialized,
 				translated: obj
 			}

@@ -10,7 +10,7 @@ module.exports = (i2c) => {
 
 	function serializeReading(read) {
 		if (read.error) return `0,${Date.now()}\n`
-		return `1,${read.deserialized},${Date.now()}\n`
+		return `1,${read.vars},${Date.now()}\n`
 	}
 
 	function parseReading(string) {
@@ -21,7 +21,7 @@ module.exports = (i2c) => {
 		const date = timestampToHuman(timestamp)
 		if (error) {
 			return {
-				error: 'reading failed',
+				error,
 				timestamp,
 				date
 			}
