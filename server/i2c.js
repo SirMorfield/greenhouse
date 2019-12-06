@@ -55,6 +55,7 @@ async function read() {
 async function writeByte(byte) {
 	try {
 		await Arduino.i2cWrite(arduinoAddress, 1, Buffer.from([byte]))
+		return {}
 	} catch (err) { return { error: err } }
 }
 
@@ -91,8 +92,8 @@ async function write(varName, int) {
 			break
 		}
 
-		if (reads.deserialized[varName] === int) {
-			toReturn = {}
+		if (reads.translated[varName] === int) {
+			toReturn = 0
 			break
 		}
 

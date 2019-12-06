@@ -14,11 +14,12 @@ module.exports = (i2c) => {
 	}
 
 	function parseReading(string) {
-		let arr = string.split(',')
-		const error = arr.shift() == '1'
+		let vars = string.split(',')
 
-		const timestamp = parseInt(arr.pop())
+		const timestamp = parseInt(vars.pop())
 		const date = timestampToHuman(timestamp)
+
+		const error = vars.shift() == '1'
 		if (error) {
 			return {
 				error,
@@ -27,23 +28,25 @@ module.exports = (i2c) => {
 			}
 		}
 
-		arr = arr.map((str) => parseInt(str))
+		vars = vars.map((str) => parseInt(str))
 
 		let obj
 		try {
-			obj = translator.intsToObj(arr)
+			obj = translator.intsToObj(vars)
 		} catch (err) {
 			return {
-				error: 'cannot parse',
-				deserialized: arr
+				error: err,
+				date,
+				timestamp,
+				vars
 			}
 		}
 
 		return {
-			deserialized: arr,
-			translated: obj,
+			date: timestampToHuman(timestamp),
 			timestamp,
-			date: timestampToHuman(timestamp)
+			vars,
+			translated: obj
 		}
 	}
 
