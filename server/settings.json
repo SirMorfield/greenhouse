@@ -1,0 +1,24 @@
+{
+	"logInterval": 60000,
+	"lamp": {
+		"lampOn": {
+			"hour": 4,
+			"cron": "* * 4 * * *"
+		},
+		"lampOff": {
+			"hour": 22,
+			"cron": "* * 22 * * *"
+		}
+	},
+	"arduinoVars": {
+		"dehumidifierOn": 0,
+		"lampOn": 0,
+		"heaterOn": 0,
+		"fanInPWM": 255,
+		"fanOutPWM": 255,
+		"ledPWM": 255,
+		"fanInOn": 1,
+		"fanOutOn": 1,
+		"ledOn": 0
+	}
+}

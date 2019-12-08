@@ -56,7 +56,7 @@ async function writeByte(byte) {
 	try {
 		await Arduino.i2cWrite(arduinoAddress, 1, Buffer.from([byte]))
 		return {}
-	} catch (err) { return { error: err } }
+	} catch (error) { return { error } }
 }
 
 let isWriting = false
@@ -110,7 +110,15 @@ async function write(varName, int) {
 	return toReturn
 }
 
+async function writeList(obj) {
+	for (const name in obj) {
+		const error = await i2c.write(name, obj[name])
+		if (error) return error
+	}
+}
+
 module.exports = {
 	read,
-	write
+	write,
+	writeList
 }
