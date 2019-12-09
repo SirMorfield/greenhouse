@@ -17,14 +17,14 @@
 	const i2c = require('./server/i2c.js')
 
 	const isPi = require('detect-rpi')()
-	// if (isPi && isProduction) {
-	const logic = require('./server/logic.js')(i2c)
-	await logic.defaultArduinoVars(env.defaultArduinoVars)
-	await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
-	await logic.humidity(env.humidity.target, env.humidity.interval)
-	await logic.temperature(env.temperature.target, env.temperature.interval)
-	await logic.saveReading(env.saveReading.interval)
-	// }
+	if (isPi && isProduction) {
+		const logic = require('./server/logic.js')(i2c)
+		await logic.defaultArduinoVars(env.defaultArduinoVars)
+		await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
+		await logic.humidity(env.humidity.target, env.humidity.interval)
+		await logic.temperature(env.temperature.target, env.temperature.interval)
+		await logic.saveReading(env.saveReading.interval)
+	}
 
 	const io = require('socket.io')(http)
 	io.on('connection', (socket) => {
