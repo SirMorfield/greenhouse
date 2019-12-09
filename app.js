@@ -1,12 +1,9 @@
-
 (async () => {
 	console.clear()
 	const path = require('path')
 	const express = require('express')
 	const app = express()
 	const http = require('http').createServer(app)
-	const io = require('socket.io')(http)
-	const isPi = require('detect-rpi')()
 
 	app.use(express.static(path.join(__dirname, 'public/')))
 
@@ -14,30 +11,34 @@
 		res.sendFile(path.join(__dirname, 'public/index.html'))
 	})
 
-	const env = require('./server/settings.json')
+	const isProduction = process.env.NODE_ENV == 'production'
 	const log = require('./server/log.js')
-	const production = process.env.NODE_ENV == 'production'
+	const env = require('./server/settings.json')
+	const i2c = require('./server/i2c.js')
 
-	if (isPi && production) {
-		console.log('is pi')
-		const i2c = require('./server/i2c.js')
+	const isPi = require('detect-rpi')()
+	// if (isPi && isProduction) {
+	const logic = require('./server/logic.js')(i2c)
+	await logic.defaultArduinoVars(env.defaultArduinoVars)
+	await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
+	await logic.humidity(env.humidity.target, env.humidity.interval)
+	await logic.temperature(env.temperature.target, env.temperature.interval)
+	await logic.saveReading(env.saveReading.interval)
+	// }
 
-		log.add(i2c, true, env.logInterval)
-
-		const error = await i2c.writeList(env.arduinoVars)
-		if (error) console.error(error)
-
-		const lamp = require('./server/lamp.js')(i2c)
-		await lamp.init(env.lamp)
-	}
-
-	io.on('connection', async (socket) => {
-		const readings = await log.getReadingsFrontend()
-		socket.emit('readings', readings)
-		socket.on('read', async () => {
-
+	const io = require('socket.io')(http)
+	io.on('connection', (socket) => {
+		log.getReadingsFrontend()
+			.then((r) => socket.emit('readings', r))
+		socket.on('reqRead', async () => {
+			if (!isPi) {
+				socket.emit('resRead', { error: 'not running on pi' })
+				return
+			}
+			const read = await i2c.read()
+			socket.emit('resRead', read)
 		})
 	})
 
-	http.listen(production ? 433 : 8080)
+	http.listen(env.port)
 })()

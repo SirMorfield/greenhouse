@@ -21,15 +21,17 @@
 
 		body {
 			background-color: rgb(32, 30, 30);
-			/* background-color: rgb(34, 69, 226); */
-
 			color: white;
 		}
 
-		#lastValues {
+		#vars {
 			/* border-collapse: separate; */
 			border-color: white;
 			padding: 10px;
+		}
+
+		#lastReading {
+			padding: 20px;
 		}
 	</style>
 </head>
@@ -40,54 +42,14 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/main.js"></script>
 
-	<button onclick="socket.emit('read')">read()</button>
+	<div id="lastReading">
+		<table>
+			<tbody id="vars"></tbody>
+		</table>
+		<div id="error"></div>
+	</div>
 
-	<table id="lastValues">
-		<tr>
-			<td>dehumidifierOn</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>lampOn</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>heaterOn</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>fanInPWM</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>fanOutPWM</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>ledPWM</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>temp</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>hum</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>fanInOn</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>fanOutOn</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>ledOn</td>
-			<td></td>
-		</tr>
-	</table>
+	<button onclick="socket.emit('reqRead')">Request read</button>
 </body>
 
 </html>

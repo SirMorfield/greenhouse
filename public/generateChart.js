@@ -138,8 +138,8 @@ window.onload = () => {
 }
 
 function updateData({ temps, hums }) {
-	console.log('temps:', temps)
-	console.log('hums', hums)
+	// console.log('temps:', temps)
+	// console.log('hums', hums)
 	cfg.data.datasets[0].data = temps
 	cfg.data.datasets[1].data = hums
 	// setFirstDay()

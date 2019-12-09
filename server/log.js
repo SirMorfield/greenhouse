@@ -12,6 +12,11 @@ function serializeReading(read) {
 	return `1,${read.vars},${Date.now()}\n`
 }
 
+async function saveReading(reading) {
+	reading = serializeReading(reading)
+	await fs.appendFile(savePath, reading)
+}
+
 function parseReading(string) {
 	let vars = string.split(',')
 
@@ -47,17 +52,6 @@ function parseReading(string) {
 		vars,
 		translated: obj
 	}
-}
-
-let timeout
-async function add(i2c, loop = true, interval = 5 * 60 * 1000) {
-	if (timeout) clearTimeout(timeout)
-
-	let read = await i2c.read()
-	read = serializeReading(read)
-	await fs.appendFile(savePath, read)
-
-	if (loop) timeout = setTimeout(() => { add(true, interval) }, interval)
 }
 
 async function getReadings() {
@@ -98,7 +92,8 @@ async function getReadingsFrontend() {
 }
 
 module.exports = {
-	add,
 	getReadings,
-	getReadingsFrontend
+	getReadingsFrontend,
+	serializeReading,
+	saveReading
 }

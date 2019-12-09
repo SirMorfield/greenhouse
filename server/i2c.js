@@ -13,6 +13,7 @@ async function readByte() {
 let isReading = false
 class Reader extends EventEmitter { }
 const reader = new Reader()
+reader.setMaxListeners(30)
 
 async function read() {
 	if (isReading) {
@@ -62,22 +63,26 @@ async function writeByte(byte) {
 let isWriting = false
 class Writer extends EventEmitter { }
 const writer = new Writer()
+writer.setMaxListeners(30)
 
 async function write(varName, int) {
+	const reads = await read()
+
+	if (!reads.error && reads.translated[varName] === int) return 0
+
 	if (isWriting) {
 		await new Promise((resolve) => writer.on('writeDone', resolve))
-		const msg = await write(varName, int)
-		return msg
+		return await write(varName, int)
 	}
 
 	let fails = 0
-	let toReturn
+	let toReturn = 0
 
 	isWriting = true
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
+	const bytes = translator.serialize(varName, int)
 	while (true) {
-		const bytes = translator.serialize(varName, int)
 		for (const byte of bytes) {
 			let res = await writeByte(byte)
 			if (res.error) {
@@ -93,6 +98,7 @@ async function write(varName, int) {
 		}
 
 		if (reads.translated[varName] === int) {
+			// success
 			toReturn = 0
 			break
 		}
@@ -110,15 +116,7 @@ async function write(varName, int) {
 	return toReturn
 }
 
-async function writeList(obj) {
-	for (const name in obj) {
-		const error = await i2c.write(name, obj[name])
-		if (error) return error
-	}
-}
-
 module.exports = {
 	read,
-	write,
-	writeList
+	write
 }

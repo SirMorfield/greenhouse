@@ -1,16 +1,23 @@
 {
-	"logInterval": 60000,
 	"lamp": {
 		"lampOn": {
 			"hour": 4,
-			"cron": "* * 4 * * *"
+			"minute": 0
 		},
 		"lampOff": {
 			"hour": 22,
-			"cron": "* * 22 * * *"
+			"minute": 0
 		}
 	},
-	"arduinoVars": {
+	"humidity": {
+		"target": 60,
+		"interval": 300000
+	},
+	"temperature": {
+		"target": 23,
+		"interval": 300000
+	},
+	"defaultArduinoVars": {
 		"dehumidifierOn": 0,
 		"lampOn": 0,
 		"heaterOn": 0,
@@ -20,5 +27,9 @@
 		"fanInOn": 1,
 		"fanOutOn": 1,
 		"ledOn": 0
-	}
+	},
+	"saveReading": {
+		"interval": 300000
+	},
+	"port": 443
 }
