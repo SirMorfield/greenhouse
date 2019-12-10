@@ -66,10 +66,6 @@ const writer = new Writer()
 writer.setMaxListeners(30)
 
 async function write(varName, int) {
-	const reads = await read()
-
-	if (!reads.error && reads.translated[varName] === int) return 0
-
 	if (isWriting) {
 		await new Promise((resolve) => writer.on('writeDone', resolve))
 		return await write(varName, int)

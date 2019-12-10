@@ -21,15 +21,19 @@
 		const logic = require('./server/logic.js')(i2c)
 		await logic.defaultArduinoVars(env.defaultArduinoVars)
 		await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
-		await logic.humidity(env.humidity.target, env.humidity.interval)
-		await logic.temperature(env.temperature.target, env.temperature.interval)
+		await logic.humidity(env.humidity)
+		await logic.temperature(env.temperature)
 		await logic.saveReading(env.saveReading.interval)
 	}
 
 	const io = require('socket.io')(http)
 	io.on('connection', (socket) => {
-		log.getReadingsFrontend()
-			.then((r) => socket.emit('readings', r))
+
+		socket.on('reqReadings', async () => {
+			const readings = await log.getReadingsFrontend()
+			socket.emit('resReadings', readings)
+		})
+
 		socket.on('reqRead', async () => {
 			if (!isPi) {
 				socket.emit('resRead', { error: 'not running on pi' })

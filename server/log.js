@@ -8,7 +8,7 @@ function timestampToHuman(timestamp) {
 }
 
 function serializeReading(read) {
-	if (read.error) return `0,${Date.now()}\n`
+	if (read.error) return `0,${read.error},${Date.now()}\n`
 	return `1,${read.vars},${Date.now()}\n`
 }
 

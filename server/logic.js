@@ -32,13 +32,26 @@ module.exports = (i2c) => {
 	}
 
 	let temperatureTimeout
-	async function temperature(target, interval) {
+	async function temperature({ target, interval, margin }) {
 		if (temperatureTimeout) clearTimeout(temperatureTimeout)
 
 		const read = await i2c.read()
 		if (read.error) throw read.error
 
-		await i2c.write('heaterOn', target < read.translated.temp ? 1 : 0)
+		if (read.translated.temp > target + margin) {
+			await i2c.write('fanInOn', 1)
+			await i2c.write('fanOutOn', 1)
+			await i2c.write('heaterOn', 0)
+
+		} else if (read.translated.temp + margin < target) {
+			await i2c.write('fanInOn', 0)
+			await i2c.write('fanOutOn', 0)
+			await i2c.write('heaterOn', 1)
+		} else {
+			await i2c.write('fanInOn', 0)
+			await i2c.write('fanOutOn', 0)
+			await i2c.write('heaterOn', 0)
+		}
 
 		if (interval && interval > 0) {
 			temperatureTimeout = setTimeout(() => {
@@ -48,13 +61,14 @@ module.exports = (i2c) => {
 	}
 
 	let humidityTimeout
-	async function humidity(target, interval) {
+	async function humidity({ target, interval, margin }) {
 		if (humidityTimeout) clearTimeout(humidityTimeout)
 
 		const read = await i2c.read()
 		if (read.error) throw read.error
 
-		await i2c.write('dehumidifierOn', target > read.translated.hum ? 1 : 0)
+		const newVal = target > read.translated.hum + margin ? 1 : 0
+		await i2c.write('dehumidifierOn', newVal)
 
 		if (interval && interval > 0) {
 			humidityTimeout = setTimeout(() => {

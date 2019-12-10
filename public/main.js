@@ -1,5 +1,6 @@
 const socket = io()
-socket.on('readings', updateData)
+socket.emit('reqReadings')
+socket.on('resReadings', updateData)
 
 socket.emit('reqRead')
 socket.on('resRead', (read) => {

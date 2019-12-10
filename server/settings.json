@@ -11,11 +11,13 @@
 	},
 	"humidity": {
 		"target": 60,
-		"interval": 300000
+		"margin": 5,
+		"interval": 120000
 	},
 	"temperature": {
 		"target": 23,
-		"interval": 300000
+		"margin": 1.5,
+		"interval": 20000
 	},
 	"defaultArduinoVars": {
 		"dehumidifierOn": 0,
