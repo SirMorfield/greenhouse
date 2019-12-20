@@ -17,10 +17,10 @@
 	let i2c
 
 	const isPi = require('detect-rpi')()
-	if (isPi && isProduction) {
+	if (isPi) {
 		i2c = require('./server/i2c.js')
 		const logic = require('./server/logic.js')(i2c)
-		await logic.defaultArduinoVars(env.defaultArduinoVars)
+		// await logic.defaultArduinoVars(env.defaultArduinoVars)
 		await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
 		await logic.humidity(env.humidity)
 		await logic.temperature(env.temperature)
@@ -49,6 +49,7 @@
 				socket.emit('resWrite', { error: 'not running on pi' })
 				return
 			}
+			socket.emit('resWrite', 'starting write')
 
 			let write
 			try {
@@ -56,7 +57,7 @@
 			} catch (err) {
 				write = err
 			}
-			socket.emit('resWrite', write)
+			socket.emit('resWrite', write || 'no write output')
 		})
 	})
 

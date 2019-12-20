@@ -2,8 +2,7 @@ const socket = io()
 socket.emit('reqReadings')
 socket.on('resReadings', updateData)
 
-socket.emit('reqRead')
-socket.on('resRead', (read) => {
+function showVars(read) {
 	if (read.error) {
 		document.getElementById('error').innerText = read.error
 		document.getElementById('vars').innerHTML = ''
@@ -20,15 +19,19 @@ socket.on('resRead', (read) => {
 	k += '</tbody>'
 
 	document.getElementById('vars').innerHTML = k
-})
+}
+
+socket.emit('reqRead')
+socket.on('resRead', showVars)
 
 function writeArduino() {
-	const varName = document.getElementById('select')
-	const int = document.getElementById('int')
+	const varName = document.getElementById('select').value
+	const int = parseInt(document.getElementById('int').value)
 
 	socket.emit('reqWrite', { varName, int })
 }
 
 socket.on('resWrite', async (out) => {
-	document.getElementById('console').innerText += `$ ${JSON.stringify(out, null, 4)}\n`
+	document.getElementById('console').innerText += `$ ${JSON.stringify(out, null, 1)}\n`
+	showVars(out)
 })

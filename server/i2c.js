@@ -78,6 +78,7 @@ async function write(varName, int) {
 	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	const bytes = translator.serialize(varName, int)
+	let reads
 	while (true) {
 		for (const byte of bytes) {
 			let res = await writeByte(byte)
@@ -87,7 +88,7 @@ async function write(varName, int) {
 			}
 		}
 
-		const reads = await read()
+		reads = await read()
 		if (reads.error) {
 			toReturn = reads.error
 			break
@@ -95,7 +96,7 @@ async function write(varName, int) {
 
 		if (reads.translated[varName] === int) {
 			// success
-			toReturn = 0
+			toReturn = reads
 			break
 		}
 
