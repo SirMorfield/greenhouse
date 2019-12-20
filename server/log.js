@@ -8,8 +8,8 @@ function timestampToHuman(timestamp) {
 }
 
 function serializeReading(read) {
-	if (read.error) return `0,${read.error},${Date.now()}\n`
-	return `1,${read.vars},${Date.now()}\n`
+	if (read.error) return `1,${read.error},${Date.now()}\n`
+	return `0,${read.vars},${Date.now()}\n`
 }
 
 async function saveReading(reading) {
@@ -24,13 +24,13 @@ function parseReading(string) {
 	const date = timestampToHuman(timestamp)
 
 	const error = vars.shift() == '1'
-	if (error) {
-		return {
-			error,
-			timestamp,
-			date
-		}
-	}
+	// if (error) {
+	// 	return {
+	// 		error,
+	// 		timestamp,
+	// 		date
+	// 	}
+	// }
 
 	vars = vars.map((str) => parseInt(str))
 
@@ -61,7 +61,7 @@ async function getReadings() {
 	readings = readings.filter((string) => string.length > 1)
 
 	readings = readings.map(parseReading)
-	readings = readings.filter((reading) => reading.error === undefined)
+	// readings = readings.filter((reading) => reading.error === undefined)
 
 	return readings
 }
