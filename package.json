@@ -5,7 +5,7 @@
 	"main": "readLine.js",
 	"scripts": {
 		"dev": "nodemon ./app.js --config config/nodemon.json",
-		"production": "NODE_ENV=production pm2 start ./config/app.json"
+		"production": "pm2 start ./config/app.json"
 	},
 	"repository": {
 		"type": "git",
