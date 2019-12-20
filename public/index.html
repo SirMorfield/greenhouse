@@ -32,6 +32,17 @@
 
 		#lastReading {
 			padding: 20px;
+			background-color: rgb(49, 46, 46);
+		}
+
+		#console {
+			background-color: rgb(49, 46, 46);
+			width: 95%;
+			margin: 10px;
+			padding: 10px;
+			min-height: 200px;
+			max-height: 90vh;
+			overflow: scroll;
 		}
 	</style>
 </head>
@@ -50,6 +61,21 @@
 	</div>
 
 	<button onclick="socket.emit('reqRead')">Request read</button>
+	<br>
+	<select id="select">
+		<option value="dehumidifierOn">dehumidifierOn</option>
+		<option value="lampOn">lampOn</option>
+		<option value="heaterOn">heaterOn</option>
+		<option value="fanInPWM">fanInPWM</option>
+		<option value="fanOutPWM">fanOutPWM</option>
+		<option value="ledPWM">ledPWM</option>
+		<option value="fanInOn">fanInOn</option>
+		<option value="fanOutOn">fanOutOn</option>
+		<option value="ledOn">ledOn</option>
+	</select>
+	<input type="text" id="int"><br>
+	<button onclick="writeArduino()">write</button>
+	<div id="console"></div>
 </body>
 
 </html>

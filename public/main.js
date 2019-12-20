@@ -21,3 +21,14 @@ socket.on('resRead', (read) => {
 
 	document.getElementById('vars').innerHTML = k
 })
+
+function writeArduino() {
+	const varName = document.getElementById('select')
+	const int = document.getElementById('int')
+
+	socket.emit('reqWrite', { varName, int })
+}
+
+socket.on('resWrite', async (out) => {
+	document.getElementById('console').innerText += `$ ${JSON.stringify(out, null, 4)}\n`
+})

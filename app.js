@@ -14,10 +14,11 @@
 	const isProduction = process.env.NODE_ENV == 'production'
 	const log = require('./server/log.js')
 	const env = require('./server/settings.json')
-	const i2c = require('./server/i2c.js')
+	let i2c
 
 	const isPi = require('detect-rpi')()
 	if (isPi && isProduction) {
+		i2c = require('./server/i2c.js')
 		const logic = require('./server/logic.js')(i2c)
 		await logic.defaultArduinoVars(env.defaultArduinoVars)
 		await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
@@ -41,6 +42,21 @@
 			}
 			const read = await i2c.read()
 			socket.emit('resRead', read)
+		})
+
+		socket.on('reqWrite', async ({ varName, int }) => {
+			if (!isPi) {
+				socket.emit('resWrite', { error: 'not running on pi' })
+				return
+			}
+
+			let write
+			try {
+				write = await i2c.write(varName, int)
+			} catch (err) {
+				write = err
+			}
+			socket.emit('resWrite', write)
 		})
 	})
 

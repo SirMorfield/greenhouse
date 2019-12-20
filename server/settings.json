@@ -10,12 +10,12 @@
 		}
 	},
 	"humidity": {
-		"target": 60,
+		"target": 50,
 		"margin": 5,
 		"interval": 120000
 	},
 	"temperature": {
-		"target": 23,
+		"target": 22,
 		"margin": 1.5,
 		"interval": 20000
 	},
@@ -33,5 +33,5 @@
 	"saveReading": {
 		"interval": 300000
 	},
-	"port": 443
+	"port": 8080
 }
