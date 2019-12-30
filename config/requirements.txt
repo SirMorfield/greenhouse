@@ -1,5 +1,9 @@
-arduino-mk
+> arduino-mk
 sudo apt install arduino-mk -y
 
-avrdude
+> avrdude
 sudo apt install avrdude -y
+
+> allow SPI, I2C, Remote GPIO
+sudo raspi-config
+Advanced options
