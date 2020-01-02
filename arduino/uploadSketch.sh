@@ -1,4 +1,10 @@
 #!/bin/bash
+cd /home/pi/greenhouse/arduino
+
+# sudo cp -r sketch/DHT/ /usr/share/arduino/libraries/
+# sudo cp -r sketch/Adafruit_Sensor/ /usr/share/arduino/libraries/
+
+
 make -s -C sketch/
 
 sudo sh -c "echo 8 > /sys/class/gpio/unexport"
