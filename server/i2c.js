@@ -6,7 +6,8 @@ let Arduino
 
 async function readByte() {
 	try {
-		return await Arduino.readByte(arduinoAddress, 1)
+		const data = await Arduino.i2cRead(arduinoAddress, 1, Buffer.alloc(1))
+		return data.buffer.readUIntBE()
 	} catch (err) { return { error: err } }
 }
 

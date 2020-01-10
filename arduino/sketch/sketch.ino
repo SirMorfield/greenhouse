@@ -120,18 +120,17 @@ void respond()
 uint16_t sendDataPos = 0;
 void sendData(int var)
 {
-	Wire.write(69);
-	// digitalWrite(greenLedPin, sendDataPos == 0);
+	digitalWrite(greenLedPin, sendDataPos == 0);
 
-	// if (sendDataPos == 0)
-	// {
-	// 	respond();
-	// 	updateBytesToSend();
-	// }
-	// // Wire.write(bytesToSend[sendDataPos]);
+	if (sendDataPos == 0)
+	{
+		respond();
+		updateBytesToSend();
+	}
+	Wire.write(bytesToSend[sendDataPos]);
 
-	// if (sendDataPos++ == (numBytesToSend - 1))
-	// 	sendDataPos = 0;
+	if (sendDataPos++ == (numBytesToSend - 1))
+		sendDataPos = 0;
 }
 
 void setup()

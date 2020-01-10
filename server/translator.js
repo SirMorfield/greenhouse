@@ -44,12 +44,13 @@ class Translator {
 		}
 
 		let vars = bits.map(str => parseInt(str, 2))
-
-		// vars[0] = parseFloat((vars[0] * 0.1).toFixed(2)) // temp
-		// vars[1] = parseFloat((vars[1] * 0.1).toFixed(2)) // hum
+		let realVars = JSON.parse(JSON.stringify(vars))
+		vars[0] = parseFloat((vars[0] * 0.1).toFixed(2)) // temp
+		vars[1] = parseFloat((vars[1] * 0.1).toFixed(2)) // hum
 		return {
 			bits,
-			vars
+			vars,
+			realVars
 		}
 	}
 	intsToObj(vars) {
