@@ -4,6 +4,10 @@ const arduinoAddress = 0x08
 const translator = require('./translator.js')
 let Arduino
 
+async function init() {
+	if (!Arduino) Arduino = await i2c.openPromisified(1)
+}
+
 async function readByte() {
 	try {
 		const data = await Arduino.i2cRead(arduinoAddress, 1, Buffer.alloc(1))
@@ -24,7 +28,6 @@ async function read() {
 	}
 
 	isReading = true
-	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	let fails = 0
 	let errors = []
@@ -43,6 +46,8 @@ async function read() {
 			isReading = false
 			return res
 		}
+
+		console.log('read fail')
 
 		if (fails++ % 2 == 0) await readByte()
 
@@ -74,9 +79,7 @@ async function write(varName, int) {
 
 	let fails = 0
 	let toReturn = 0
-
 	isWriting = true
-	if (!Arduino) Arduino = await i2c.openPromisified(1)
 
 	const bytes = translator.serialize(varName, int)
 	let reads
@@ -115,6 +118,9 @@ async function write(varName, int) {
 }
 
 module.exports = {
+	init,
+	readByte,
+	writeByte,
 	read,
 	write
 }
