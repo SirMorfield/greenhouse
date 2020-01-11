@@ -1,28 +1,33 @@
 class Translator {
 	constructor() {
 		this.names = [
+			'dehumidifierOn',
+			'lampOn',
+			'heaterOn',
+			'fanInPWM',
+			'fanOutPWM',
+			'ledPWM',
 			'temp',
 			'hum',
-			'heaterOn',
-			'dehumidifierOn',
-			'lampPWM',
-			'inOutFanPWM',
-			'pumpPWM',
-			'sensorFanPWM'
+			'fanInOn',
+			'fanOutOn',
+			'ledOn'
 		]
 		this.varSizes = [
+			1,  // dehumidifierOn
+			1,  // lampOn
+			1,  // heaterOn
+			8,  // fanInPWM
+			8,  // fanOutPWM
+			8,  // ledPWM
 			10, // temp
 			10, // hum
-			1,  // heaterOn
-			1,  // dehumidifierOn
-			8,  // lampPWM
-			8,  // inOutFanPWM
-			8,  // pumpPWM
-			8   // sensorFanPWM
+			1,  // fanInOn
+			1,  // fanOutOn
+			1   // ledOn
 		]
-		this.numVars = 8
-		// Math.ceil((10 + 10 + 1 + 1 + 8 + 8 + 8 + 8 ) / 8) = 7
-		this.numBytesToRead = 7
+		this.numVars = this.names.length
+		this.numBytesToRead = 8
 	}
 	toObject(names, values) {
 		let result = {};
@@ -44,13 +49,12 @@ class Translator {
 		}
 
 		let vars = bits.map(str => parseInt(str, 2))
-		let realVars = JSON.parse(JSON.stringify(vars))
-		vars[0] = parseFloat((vars[0] * 0.1).toFixed(2)) // temp
-		vars[1] = parseFloat((vars[1] * 0.1).toFixed(2)) // hum
+
+		vars[6] = parseFloat((vars[6] * 0.1).toFixed(2)) // temp
+		vars[7] = parseFloat((vars[7] * 0.1).toFixed(2)) // hum
 		return {
 			bits,
-			vars,
-			realVars
+			vars
 		}
 	}
 	intsToObj(vars) {
@@ -73,9 +77,9 @@ class Translator {
 			let checksum = bytesWithoutChecksum.pop()
 			const correctChecksum = this.generateChecksum(bytesWithoutChecksum)
 
-			// if (checksum !== correctChecksum) {
-			// 	return { error: `checksum: ${checksum} correctChecksum: ${correctChecksum}` }
-			// }
+			if (checksum !== correctChecksum) {
+				return { error: `checksum: ${checksum} correctChecksum: ${correctChecksum}` }
+			}
 
 			let deserialized = this.deserializeBytes(bytesWithoutChecksum)
 			let obj = this.intsToObj(deserialized.vars)
