@@ -1,7 +1,7 @@
 #include <DHT.h>
 #include <Wire.h>
 
-DHT dht(2, DHT22);
+DHT dht(8, DHT22);
 
 #define slaveAddress 0x08
 #define heaterPin 8
@@ -11,20 +11,20 @@ DHT dht(2, DHT22);
 #define fanOutPin 5
 #define ledPin 3
 
+#define dehumidifierOn vars[0]
+#define lampOn vars[1]
+#define heaterOn vars[2]
+#define fanInPWM vars[3]
+#define fanOutPWM vars[4]
+#define ledPWM vars[5]
+#define temp vars[6]
+#define hum vars[7]
+#define fanInOn vars[8]
+#define fanOutOn vars[9]
+#define ledOn vars[10]
+
 #define numVars 11
-uint16_t vars[numVars] = {
-	0, // dehumidifierOn
-	0, // lampOn
-	0, // heaterOn
-	0, // fanInPWM
-	0, // fanOutPWM
-	0, // ledPWM
-	0, // temp
-	0, // hum
-	0, // fanInOn
-	0, // fanOutOn
-	0  // ledOn
-};
+uint16_t vars[numVars] = {};
 
 uint8_t varSizes[numVars] = {
 	1,  // dehumidifierOn
@@ -45,7 +45,19 @@ uint8_t varSizes[numVars] = {
 // + 1 checkSum
 #define numBytesToSend 8
 
-uint8_t bytesToSend[numBytesToSend] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t bytesToSend[numBytesToSend] = {};
+
+uint8_t generateChecksum(uint8_t bytes[], uint8_t size)
+{
+	uint8_t sum = 0;
+	for (uint16_t i = 0; i < size; i++)
+	{
+		sum += bytes[i];
+	}
+
+	sum = 255 - sum;
+	return sum;
+}
 
 void updateBytesToSend()
 {
@@ -74,33 +86,8 @@ void updateBytesToSend()
 	bytesToSend[numBytesToSend - 1] = generateChecksum(bytesToSend, numBytesToSend - 1);
 }
 
-#define dehumidifierOn vars[0]
-#define lampOn vars[1]
-#define heaterOn vars[2]
-#define fanInPWM vars[3]
-#define fanOutPWM vars[4]
-#define ledPWM vars[5]
-#define temp vars[6]
-#define hum vars[7]
-#define fanInOn vars[8]
-#define fanOutOn vars[9]
-#define ledOn vars[10]
-
-uint8_t generateChecksum(uint8_t bytes[], uint8_t size)
-{
-	uint8_t sum = 0;
-	for (uint16_t i = 0; i < size; i++)
-	{
-		sum += bytes[i];
-	}
-
-	sum = 255 - sum;
-	return sum;
-}
-
 uint16_t receiveDataPos = 0;
 uint8_t receiveBuffer[2] = {};
-
 void receiveData()
 {
 	uint8_t inByte = Wire.read();
@@ -123,19 +110,6 @@ void receiveData()
 
 		receiveDataPos = 0;
 	}
-}
-
-uint16_t sendDataPos = 0;
-void sendData()
-{
-	if (sendDataPos == 0)
-	{
-		respond();
-		updateBytesToSend();
-	}
-	Wire.write(bytesToSend[sendDataPos]);
-	if (sendDataPos++ == (numBytesToSend - 1))
-		sendDataPos = 0;
 }
 
 void respond()
@@ -161,6 +135,19 @@ void respond()
 		analogWrite(ledPin, 255 - ledPWM);
 	else
 		digitalWrite(ledPin, HIGH);
+}
+
+uint16_t sendDataPos = 0;
+void sendData()
+{
+	if (sendDataPos == 0)
+	{
+		respond();
+		updateBytesToSend();
+	}
+	Wire.write(bytesToSend[sendDataPos]);
+	if (sendDataPos++ == (numBytesToSend - 1))
+		sendDataPos = 0;
 }
 
 void setup()
