@@ -47,8 +47,6 @@ async function read() {
 			return res
 		}
 
-		console.log('read fail')
-
 		if (fails++ % 2 == 0) await readByte()
 
 		errors.push({

@@ -1,4 +1,4 @@
-module.exports = (http, i2c, isPi) => {
+module.exports = (http, i2c, isPi, log) => {
 	const io = require('socket.io')(http)
 
 	io.on('connection', (socket) => {

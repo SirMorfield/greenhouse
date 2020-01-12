@@ -7,62 +7,31 @@ function timestampToHuman(timestamp) {
 	return ((new Date(timestamp)).toString()).replace(/\ GMT.*$/, '')
 }
 
-function serializeReading(read) {
-	if (read.error) return `1,${read.error},${Date.now()}\n`
-	return `0,${read.vars},${Date.now()}\n`
-}
-
 async function saveReading(reading) {
-	reading = serializeReading(reading)
-	await fs.appendFile(savePath, reading)
-}
+	if (reading.error) return
+	reading.bytes.push(Date.now())
+	let str = `${reading.bytes}\n`
 
-function parseReading(string) {
-	let vars = string.split(',')
-
-	const timestamp = parseInt(vars.pop())
-	const date = timestampToHuman(timestamp)
-
-	const error = vars.shift() == '1'
-	// if (error) {
-	// 	return {
-	// 		error,
-	// 		timestamp,
-	// 		date
-	// 	}
-	// }
-
-	vars = vars.map((str) => parseInt(str))
-
-	let obj
-	try {
-		obj = translator.intsToObj(vars)
-	} catch (err) {
-		return {
-			error: err,
-			date,
-			timestamp,
-			vars
-		}
-	}
-
-	return {
-		date: timestampToHuman(timestamp),
-		timestamp,
-		vars,
-		translated: obj
-	}
+	await fs.appendFile(savePath, str)
 }
 
 async function getReadings() {
 	let readings = await fs.readFile(savePath)
 	readings = readings.toString()
 	readings = readings.split('\n')
-	readings = readings.filter((string) => string.length > 1)
+	readings = readings.filter((string) => string.length >= 13)
 
-	readings = readings.map(parseReading)
-	// readings = readings.filter((reading) => reading.error === undefined)
+	readings = readings.map((reading) => {
+		reading = reading.split(',')
+		reading = reading.map(parseFloat)
 
+		const timestamp = reading.pop()
+		return {
+			timestamp,
+			date: timestampToHuman(timestamp),
+			...translator.translate(reading)
+		}
+	})
 	return readings
 }
 
@@ -92,8 +61,7 @@ async function getReadingsFrontend() {
 }
 
 module.exports = {
+	saveReading,
 	getReadings,
 	getReadingsFrontend,
-	serializeReading,
-	saveReading
 }

@@ -31,7 +31,13 @@ function writeArduino() {
 	socket.emit('reqWrite', { varName, int })
 }
 
+function printf(str) {
+	document.getElementById('console').innerText += `$ ${str}<br>`
+}
+
 socket.on('resWrite', async (out) => {
-	document.getElementById('console').innerText += `$ ${JSON.stringify(out, null, 1)}\n`
+	printf(JSON.stringify(out, null, 1))
 	showVars(out)
 })
+
+socket.on('console', printf)

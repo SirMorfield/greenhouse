@@ -1,6 +1,5 @@
-module.exports = (i2c) => {
+module.exports = (i2c, log) => {
 	const schedule = require('node-schedule')
-	const log = require('./log.js')
 
 	async function defaultArduinoVars(arduinoVars) {
 		for (const varName in arduinoVars) {
@@ -80,7 +79,6 @@ module.exports = (i2c) => {
 	let logTimeout
 	async function saveReading(interval) {
 		if (logTimeout) clearTimeout(logTimeout)
-
 		const read = await i2c.read()
 		if (read.error) throw read.error
 

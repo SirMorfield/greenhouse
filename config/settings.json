@@ -19,19 +19,9 @@
 		"margin": 1.5,
 		"interval": 20000
 	},
-	"defaultArduinoVars": {
-		"dehumidifierOn": 0,
-		"lampOn": 0,
-		"heaterOn": 0,
-		"fanInPWM": 255,
-		"fanOutPWM": 255,
-		"ledPWM": 255,
-		"fanInOn": 1,
-		"fanOutOn": 1,
-		"ledOn": 0
-	},
+	"defaultArduinoVars": {},
 	"saveReading": {
-		"interval": 300000
+		"interval": 10000
 	},
 	"port": 8080
 }

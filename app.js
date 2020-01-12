@@ -13,7 +13,7 @@
 	})
 
 	const log = require('./server/log.js')
-	const env = require('./server/settings.json')
+	const env = require('./config/settings.json')
 
 	const isPi = require('detect-rpi')()
 	let i2c
@@ -21,7 +21,7 @@
 		i2c = require('./server/i2c.js')
 		await i2c.init()
 
-		const logic = require('./server/logic.js')(i2c)
+		const logic = require('./server/logic.js')(i2c, log)
 		// await logic.defaultArduinoVars(env.defaultArduinoVars)
 		// await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
 		// await logic.humidity(env.humidity)
@@ -29,7 +29,7 @@
 		await logic.saveReading(env.saveReading.interval)
 	}
 
-	require('./server/socketing.js')(http, i2c, isPi)
+	require('./server/socketing.js')(http, i2c, isPi, log)
 
 	http.listen(env.port)
 })()
