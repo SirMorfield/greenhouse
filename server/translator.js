@@ -1,30 +1,24 @@
 class Translator {
 	constructor() {
 		this.names = [
-			'dehumidifierOn',
-			'lampOn',
 			'heaterOn',
-			'fanInPWM',
-			'fanOutPWM',
-			'ledPWM',
+			'dehumidifierOn',
+			'lampPWM',
+			'inOutFanPWM',
+			'pumpPWM',
+			'sensorFanPWM',
 			'temp',
 			'hum',
-			'fanInOn',
-			'fanOutOn',
-			'ledOn'
 		]
 		this.varSizes = [
-			1,  // dehumidifierOn
-			1,  // lampOn
 			1,  // heaterOn
-			8,  // fanInPWM
-			8,  // fanOutPWM
-			8,  // ledPWM
+			1,  // dehumidifierOn
+			8,  // lampPWM
+			8,  // inOutFanPWM
+			8,  // pumpPWM
+			8,   // sensorFanPWM
 			10, // temp
 			10, // hum
-			1,  // fanInOn
-			1,  // fanOutOn
-			1   // ledOn
 		]
 		this.numVars = this.names.length
 		this.numBytesToRead = 8
