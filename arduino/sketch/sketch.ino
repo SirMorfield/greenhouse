@@ -60,16 +60,16 @@ void receiveData() {
 // Math.ceil((10 + 10 + 1 + 1 + 8 + 8 + 8 + 8 ) / 8) = 7
 // + 1 checkSum
 // = 8
-uint8_t numBytesToSend = 8;
-uint8_t *bytesToSend;
+uint8_t numSendBytes = 8;
+uint8_t *sendBytes;
 uint8_t sendDataPos = 0;
 void sendData() {
     if (sendDataPos == 0) {
         respond();
-        bytesToSend = i2c.getBytesToSend(vars, numBytesToSend);
+        sendBytes = i2c.getSendBytes(vars, numSendBytes);
     }
-    Wire.write(bytesToSend[sendDataPos]);
-    if (sendDataPos++ == (numBytesToSend - 1)) {
+    Wire.write(sendBytes[sendDataPos]);
+    if (sendDataPos++ == (numSendBytes - 1)) {
         sendDataPos = 0;
     }
 }
