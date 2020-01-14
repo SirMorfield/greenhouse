@@ -1,10 +1,13 @@
-#include <DHT.h>
 #include <Wire.h>
 
+#include "./i2c/i2c.h"
+I2c i2c;
+
+#include <DHT.h>
 DHT dht(8, DHT22);
+
 #define greenLedPin 2
 
-#define slaveAddress 0x08
 #define heaterPin A0
 #define dehumidifierPin A1
 
@@ -25,59 +28,17 @@ DHT dht(8, DHT22);
 #define numVars 8
 uint16_t vars[numVars] = {};
 
-uint8_t varSizes[numVars] = {
-	1,  // heaterOn
-	1,  // dehumidifierOn
-	8,  // lampPWM
-	8,  // inOutFanPWM
-	8,  // pumpPWM
-	8,  // sensorFanPWM
-	10, // temp
-	10  // hum
-};
-
-// Math.ceil((10 + 10 + 1 + 1 + 8 + 8 + 8 + 8 ) / 8) = 7
-// + 1 checkSum
-#define numBytesToSend 8
-uint8_t bytesToSend[numBytesToSend] = {};
-
-uint8_t generateChecksum(uint8_t bytes[], uint8_t size)
+void respond()
 {
-	uint8_t sum = 0;
-	for (uint16_t i = 0; i < size; i++)
-	{
-		sum += bytes[i];
-	}
+	temp = dht.readTemperature() * 10;
+	hum = dht.readHumidity() * 10;
 
-	sum = 255 - sum;
-	return sum;
-}
+	digitalWrite(heaterPin, heaterOn == 0);
+	digitalWrite(dehumidifierPin, dehumidifierOn == 0);
 
-void updateBytesToSend()
-{
-	uint8_t varsToSendPos = 0;
-	uint8_t bitInBytePos = 7;
-
-	for (uint8_t i = 0; i < numVars; i++)
-	{
-		uint8_t numBitsToRead = varSizes[i];
-		uint16_t toRead = vars[i];
-
-		for (int8_t bitPos = numBitsToRead - 1; bitPos >= 0; bitPos--)
-		{
-			uint8_t bit = bitRead(toRead, bitPos);
-			uint8_t byte = bytesToSend[varsToSendPos];
-
-			bitWrite(byte, bitInBytePos, bit);
-			bytesToSend[varsToSendPos] = byte;
-			if (bitInBytePos-- == 0)
-			{
-				bitInBytePos = 7;
-				varsToSendPos++;
-			}
-		}
-	}
-	bytesToSend[numBytesToSend - 1] = generateChecksum(bytesToSend, numBytesToSend - 1);
+	analogWrite(lampPin, lampPWM);
+	analogWrite(inOutFanPin, inOutFanPWM);
+	analogWrite(pumpPin, pumpPWM);
 }
 
 uint16_t receiveDataPos = 0;
@@ -92,44 +53,34 @@ void receiveData()
 	}
 	else
 	{
-		uint8_t checkSum = generateChecksum(receiveBuffer, 2);
+		uint8_t checkSum = i2c.generateChecksum(receiveBuffer, 2);
 
 		if (checkSum == inByte)
 		{
 			vars[receiveBuffer[0]] = receiveBuffer[1];
-			digitalWrite(13, LOW);
 		}
-		else
-			digitalWrite(13, HIGH);
-
 		receiveDataPos = 0;
 	}
 }
 
-void respond()
-{
-	temp = dht.readTemperature() * 10;
-	hum = dht.readHumidity() * 10;
-
-	digitalWrite(heaterPin, heaterOn == 0);
-	digitalWrite(dehumidifierPin, dehumidifierOn == 0);
-
-	analogWrite(lampPin, lampPWM);
-	analogWrite(inOutFanPin, inOutFanPWM);
-	analogWrite(pumpPin, pumpPWM);
-}
-
-uint16_t sendDataPos = 0;
+// Math.ceil((10 + 10 + 1 + 1 + 8 + 8 + 8 + 8 ) / 8) = 7
+// + 1 checkSum
+// = 8
+uint8_t numBytesToSend = 8;
+uint8_t *bytesToSend;
+uint8_t sendDataPos = 0;
 void sendData()
 {
 	if (sendDataPos == 0)
 	{
 		respond();
-		updateBytesToSend();
+		bytesToSend = i2c.getBytesToSend(vars, numBytesToSend);
 	}
 	Wire.write(bytesToSend[sendDataPos]);
 	if (sendDataPos++ == (numBytesToSend - 1))
+	{
 		sendDataPos = 0;
+	}
 }
 
 void setup()
@@ -145,7 +96,8 @@ void setup()
 	pinMode(sensorFanPin, OUTPUT);
 
 	dht.begin();
-	Wire.begin(slaveAddress);
+
+	Wire.begin(0x08);
 	Wire.onReceive(receiveData);
 	Wire.onRequest(sendData);
 
