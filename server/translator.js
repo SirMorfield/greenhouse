@@ -9,19 +9,25 @@ class Translator {
 			'sensorFanPWM',
 			'temp',
 			'hum',
+			'MHZ19CO2',
+			'MHZ19temp',
+			'MHZ19CO2Pwm',
 		]
 		this.varSizes = [
-			1,  // heaterOn
-			1,  // dehumidifierOn
-			8,  // lampPWM
-			8,  // inOutFanPWM
-			8,  // pumpPWM
-			8,   // sensorFanPWM
-			10, // temp
-			10, // hum
+			1,	// heaterOn
+			1,	// dehumidifierOn
+			8,	// lampPWM
+			8,	// inOutFanPWM
+			8,	// pumpPWM
+			8,	// sensorFanPWM
+			10,	// temp
+			10,	// hum
+			15,	// MHZ19CO2
+			8,	// MHZ19temp
+			15,	// MHZ19CO2Pwm
 		]
 		this.numVars = this.names.length
-		this.numBytesToRead = 8
+		this.numBytesToRead = 13
 	}
 	toObject(names, values) {
 		let result = {};

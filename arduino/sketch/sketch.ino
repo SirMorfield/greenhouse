@@ -6,6 +6,9 @@ I2c i2c;
 #include <DHT.h>
 DHT dht(8, DHT22);
 
+#include "./MHZ19/MHZ19.h"
+MHZ19 mhz19;
+
 #define greenLedPin 2
 
 #define heaterPin A0
@@ -24,9 +27,16 @@ DHT dht(8, DHT22);
 #define sensorFanPWM vars[5]
 #define temp vars[6]
 #define hum vars[7]
+#define MHZ19CO2 vars[8]
+#define MHZ19temp vars[9]
+#define MHZ19pwmCO2 vars[10]
 
-#define numVars 8
+#define numVars 11
 uint16_t vars[numVars] = {};
+
+// Math.ceil((1 + 1 + 8 + 8 + 8 + 8 + 10 + 10 + 16 + 8 + 16 ) / 8) + 1 = 13
+// + 1 is for checksum
+uint8_t numSendBytes = 13;
 
 void respond() {
     temp = dht.readTemperature() * 10;
@@ -38,6 +48,16 @@ void respond() {
     analogWrite(lampPin, lampPWM);
     analogWrite(inOutFanPin, inOutFanPWM);
     analogWrite(pumpPin, pumpPWM);
+
+    int16_t *measurement = mhz19.getMeasurement();
+    if (measurement[2] != -1) {
+        MHZ19CO2 = measurement[0];
+        MHZ19temp = measurement[1];
+    } else {
+        MHZ19CO2 = 0;
+        MHZ19temp = 0;
+    }
+    MHZ19pwmCO2 = mhz19.getCO2Pwm(2000);
 }
 
 uint16_t receiveDataPos = 0;
@@ -57,16 +77,12 @@ void receiveData() {
     }
 }
 
-// Math.ceil((10 + 10 + 1 + 1 + 8 + 8 + 8 + 8 ) / 8) = 7
-// + 1 checkSum
-// = 8
-uint8_t numSendBytes = 8;
 uint8_t *sendBytes;
 uint8_t sendDataPos = 0;
 void sendData() {
     if (sendDataPos == 0) {
         respond();
-        sendBytes = i2c.getSendBytes(vars, numSendBytes);
+        sendBytes = i2c.getSendBytes(vars, numVars, numSendBytes);
     }
     Wire.write(sendBytes[sendDataPos]);
     if (sendDataPos++ == (numSendBytes - 1)) {
