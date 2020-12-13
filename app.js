@@ -26,7 +26,7 @@
 		// await logic.lamp(env.lamp.lampOn, env.lamp.lampOff)
 		// await logic.humidity(env.humidity)
 		// await logic.temperature(env.temperature)
-		await logic.saveReading(env.saveReading.interval)
+		// await logic.saveReading(env.saveReading.interval)
 	}
 
 	require('./server/socketing.js')(http, i2c, isPi, log)
